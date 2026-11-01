@@ -89,10 +89,14 @@ class AvailabilityEngine:
         service_id: int,
         target_date: str,
         slot_interval: int = 15,
+        duration_override: Optional[int] = None,
     ) -> List[Dict[str, str]]:
         """
         Compute all available time slots for a specific staff, service, and date.
         Returns list of dicts: [{'start': '09:00', 'end': '10:00'}, ...]
+
+        If duration_override is provided, it is used instead of the service's
+        default duration_minutes (for services with multiple duration options).
         """
         service = session.query(Service).filter(Service.id == service_id).first()
         if not service or not service.is_active:
@@ -112,7 +116,7 @@ class AvailabilityEngine:
         break_start = time_to_minutes(schedule.break_start) if schedule.break_start else -1
         break_end = time_to_minutes(schedule.break_end) if schedule.break_end else -1
 
-        duration = service.duration_minutes
+        duration = duration_override if duration_override else service.duration_minutes
         buffer = service.buffer_minutes
 
         # 3. Existing booked intervals

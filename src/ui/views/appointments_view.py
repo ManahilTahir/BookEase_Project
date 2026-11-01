@@ -17,6 +17,7 @@ from src.ui.theme import (
 )
 from src.ui.components.toast import show_toast
 from src.ui.components.dialogs import ConfirmDialog
+from src.ui.components.dual_scroll_frame import DualScrollFrame
 from src.database.connection import get_db
 from src.database.models import Appointment, Staff
 from src.core.booking_service import BookingService
@@ -44,7 +45,10 @@ class AppointmentsView(ctk.CTkFrame):
         self.on_navigate_wizard = on_navigate_wizard
 
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(2, weight=1)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=0)
+        self.grid_rowconfigure(3, weight=1)
 
         # 1. Header Row
         self.create_header()
@@ -52,15 +56,24 @@ class AppointmentsView(ctk.CTkFrame):
         # 2. Search & Filter Bar
         self.create_filter_bar()
 
-        # 3. Appointments Table Feed
-        self.table_scroll = ctk.CTkScrollableFrame(
+        # Horizontal Bar in Appointment Section (preserving alignment)
+        self.horizontal_bar = ctk.CTkFrame(
             self,
-            fg_color=PALETTE["dark"]["card_bg"],
+            height=2,
+            fg_color=PALETTE["dark"]["border"],
+            corner_radius=1,
+        )
+        self.horizontal_bar.grid(row=2, column=0, sticky="ew", padx=24, pady=(0, 14))
+
+        # 3. Appointments Table with Dual-Axis (Vertical & Horizontal Scroller) Frame
+        self.table_scroll = DualScrollFrame(
+            self,
+            min_content_width=1140,
             corner_radius=12,
             border_width=1,
             border_color=PALETTE["dark"]["border"],
         )
-        self.table_scroll.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 20))
+        self.table_scroll.grid(row=3, column=0, sticky="nsew", padx=24, pady=(0, 14))
 
         self.refresh_table()
 
@@ -162,8 +175,8 @@ class AppointmentsView(ctk.CTkFrame):
 
     def refresh_table(self):
         """Fetch filtered appointments from database and render table."""
-        for w in self.table_scroll.winfo_children():
-            w.destroy()
+        self.table_scroll.clear()
+        container = self.table_scroll.inner_frame
 
         search_query = self.search_entry.get().strip() if hasattr(self, "search_entry") else ""
         status_filter = self.status_var.get() if hasattr(self, "status_var") else "All"
@@ -176,22 +189,22 @@ class AppointmentsView(ctk.CTkFrame):
             )
 
             if not appointments:
-                empty = ctk.CTkFrame(self.table_scroll, fg_color="transparent")
+                empty = ctk.CTkFrame(container, fg_color="transparent")
                 empty.pack(pady=40)
                 ctk.CTkLabel(empty, text="🔍 No appointments matched your search criteria.", font=FONT_BODY, text_color=PALETTE["dark"]["text_secondary"]).pack()
                 return
 
             # Table Header
-            head_row = ctk.CTkFrame(self.table_scroll, fg_color="transparent")
+            head_row = ctk.CTkFrame(container, fg_color="transparent", width=1140)
             head_row.pack(fill="x", padx=16, pady=(10, 6))
 
             headers = [
                 ("Ref #", 110),
-                ("Date & Time", 120),
-                ("Client", 160),
-                ("Specialist", 130),
-                ("Service", 160),
-                ("Price", 80),
+                ("Date & Time", 125),
+                ("Client", 170),
+                ("Specialist", 140),
+                ("Service", 170),
+                ("Price", 85),
                 ("Status", 100),
                 ("Actions", 160),
             ]
@@ -208,11 +221,12 @@ class AppointmentsView(ctk.CTkFrame):
             # Table Rows
             for app in appointments:
                 row = ctk.CTkFrame(
-                    self.table_scroll,
+                    container,
                     corner_radius=6,
                     fg_color=PALETTE["dark"]["bg_primary"],
                     border_width=1,
                     border_color=PALETTE["dark"]["border"],
+                    width=1140,
                 )
                 row.pack(fill="x", padx=16, pady=3)
 

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block meta_description %}Browse all premium wellness services at {{ settings.get('business_name', 'Lumière Wellness') }}. Transparent pricing, expert specialists, and instant online booking.{% endblock %}
+
+{% block content %}
+<div class="page-hero page-hero-sm">
+    <div class="section-container">
+        <span class="section-badge">Our Services</span>
+        <h1>Premium Wellness Services</h1>
+        <p>All prices shown include consultation. Book directly online with instant confirmation.</p>
+    </div>
+</div>
+
+<section class="section" aria-labelledby="services-list-heading">
+    <div class="section-container">
+        <!-- Category Filter Tabs -->
+        {% set all_cats = services | map(attribute='category') | unique | list %}
+        <div class="filter-tabs" role="tablist" aria-label="Service categories">
+            <button class="filter-tab active" data-filter="all" role="tab" aria-selected="true">All Services</button>
+            {% for cat in all_cats %}
+            <button class="filter-tab" data-filter="{{ cat | lower | replace(' ', '-') | replace('&', 'and') }}" role="tab" aria-selected="false">{{ cat }}</button>
+            {% endfor %}
+        </div>
+
+        <div class="services-list" id="services-list-heading">
+            {% for svc in services %}
+            <article class="service-list-card" data-category="{{ svc.category | lower | replace(' ', '-') | replace('&', 'and') }}">
+                <div class="slc-content">
+                    <div class="slc-header">
+                        <div>
+                            <span class="slc-category-badge">{{ svc.category }}</span>
+                            <h3 class="slc-name">{{ svc.name }}</h3>
+                        </div>
+                        <div class="slc-price-block">
+                            <span class="slc-price">{{ settings.get('currency_symbol', '$') }}{{ "%.0f"|format(svc.price) }}</span>
+                            <span class="slc-duration">{{ svc.duration_minutes }} min</span>
+                        </div>
+                    </div>
+                    <p class="slc-desc">{{ svc.description }}</p>
+                    {% if svc.specialists %}
+                    <div class="slc-specialists">
+                        <span class="slc-specialists-label">Available with:</span>
+                        {% for sp in svc.specialists %}
+                        <span class="specialist-chip">{{ sp.name }}</span>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="slc-actions">
+                    <a href="{{ url_for('public.book_page') }}?service_id={{ svc.id }}" class="btn btn-primary">Book This Service</a>
+                </div>
+            </article>
+            {% else %}
+            <div class="empty-state">
+                <p>No services available at this time. Please check back soon.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block sticky_cta %}
+<div class="sticky-book-btn" id="stickyBook">
+    <a href="{{ url_for('public.book_page') }}" class="btn btn-primary">✦ Book Now</a>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+// Category filter logic
+document.querySelectorAll('.filter-tab').forEach(btn => {
+    btn.addEventListener('click', () => {
+        const filter = btn.dataset.filter;
+        document.querySelectorAll('.filter-tab').forEach(b => {
+            b.classList.remove('active');
+            b.setAttribute('aria-selected', 'false');
+        });
+        btn.classList.add('active');
+        btn.setAttribute('aria-selected', 'true');
+        document.querySelectorAll('.service-list-card').forEach(card => {
+            card.style.display = (filter === 'all' || card.dataset.category === filter) ? '' : 'none';
+        });
+    });
+});
+</script>
+{% endblock %}

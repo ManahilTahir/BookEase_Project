@@ -17,6 +17,7 @@ from src.ui.theme import (
 )
 from src.ui.components.toast import show_toast
 from src.ui.components.dialogs import ConfirmDialog, PromptDialog
+from src.ui.components.dual_scroll_frame import DualScrollFrame
 from src.database.connection import get_db
 from src.database.models import Appointment, Staff
 from src.core.booking_service import BookingService
@@ -40,16 +41,31 @@ class CalendarView(ctk.CTkFrame):
         self.selected_staff_id = None  # None = All
 
         self.grid_columnconfigure(0, weight=1)
-        self.grid_rowconfigure(1, weight=1)
+        self.grid_rowconfigure(0, weight=0)
+        self.grid_rowconfigure(1, weight=0)
+        self.grid_rowconfigure(2, weight=1)
 
         # Header Control Bar
         self.create_controls_bar()
 
-        # Dynamic Calendar Body
-        self.calendar_body = ctk.CTkFrame(self, fg_color="transparent")
-        self.calendar_body.grid(row=1, column=0, sticky="nsew", padx=24, pady=(0, 20))
-        self.calendar_body.grid_columnconfigure(0, weight=1)
-        self.calendar_body.grid_rowconfigure(0, weight=1)
+        # Horizontal Bar in Calendar Section (preserving alignment)
+        self.horizontal_bar = ctk.CTkFrame(
+            self,
+            height=2,
+            fg_color=PALETTE["dark"]["border"],
+            corner_radius=1,
+        )
+        self.horizontal_bar.grid(row=1, column=0, sticky="ew", padx=24, pady=(0, 14))
+
+        # Dynamic Calendar Body with Interactive Horizontal Scroller
+        self.calendar_body = DualScrollFrame(
+            self,
+            min_content_width=1160,
+            corner_radius=12,
+            border_width=1,
+            border_color=PALETTE["dark"]["border"],
+        )
+        self.calendar_body.grid(row=2, column=0, sticky="nsew", padx=24, pady=(0, 16))
 
         self.refresh_calendar()
 
@@ -201,8 +217,7 @@ class CalendarView(ctk.CTkFrame):
 
     def refresh_calendar(self):
         """Redraw calendar based on view mode."""
-        for w in self.calendar_body.winfo_children():
-            w.destroy()
+        self.calendar_body.clear()
 
         if self.view_mode == "day":
             self.render_day_view()
@@ -217,15 +232,17 @@ class CalendarView(ctk.CTkFrame):
     def render_day_view(self):
         date_str = self.current_date.isoformat()
         self.date_label.configure(text=self.current_date.strftime("%A, %B %d, %Y"))
+        container = self.calendar_body.inner_frame
 
-        scroll = ctk.CTkScrollableFrame(
-            self.calendar_body,
+        day_card = ctk.CTkFrame(
+            container,
+            width=1160,
             fg_color=PALETTE["dark"]["card_bg"],
             corner_radius=12,
             border_width=1,
             border_color=PALETTE["dark"]["border"],
         )
-        scroll.pack(fill="both", expand=True)
+        day_card.pack(fill="both", expand=True, padx=6, pady=6)
 
         with get_db() as session:
             appointments = BookingService.get_appointments(
@@ -234,7 +251,7 @@ class CalendarView(ctk.CTkFrame):
 
         if not appointments:
             ctk.CTkLabel(
-                scroll,
+                day_card,
                 text="No appointments scheduled for this date.",
                 font=FONT_BODY,
                 text_color=PALETTE["dark"]["text_secondary"],
@@ -242,7 +259,7 @@ class CalendarView(ctk.CTkFrame):
             return
 
         for app in appointments:
-            self.create_appointment_card(scroll, app)
+            self.create_appointment_card(day_card, app)
 
     # =========================================================================
     # WEEK VIEW
@@ -253,15 +270,17 @@ class CalendarView(ctk.CTkFrame):
         self.date_label.configure(
             text=f"{start_of_week.strftime('%b %d')} – {end_of_week.strftime('%b %d, %Y')}"
         )
+        container = self.calendar_body.inner_frame
 
         grid_wrapper = ctk.CTkFrame(
-            self.calendar_body,
+            container,
+            width=1160,
             fg_color=PALETTE["dark"]["card_bg"],
             corner_radius=12,
             border_width=1,
             border_color=PALETTE["dark"]["border"],
         )
-        grid_wrapper.pack(fill="both", expand=True)
+        grid_wrapper.pack(fill="both", expand=True, padx=6, pady=6)
 
         for col in range(7):
             grid_wrapper.grid_columnconfigure(col, weight=1)
@@ -332,13 +351,14 @@ class CalendarView(ctk.CTkFrame):
         self.date_label.configure(text=self.current_date.strftime("%B %Y"))
 
         month_frame = ctk.CTkFrame(
-            self.calendar_body,
+            self.calendar_body.inner_frame,
+            width=1160,
             fg_color=PALETTE["dark"]["card_bg"],
             corner_radius=12,
             border_width=1,
             border_color=PALETTE["dark"]["border"],
         )
-        month_frame.pack(fill="both", expand=True)
+        month_frame.pack(fill="both", expand=True, padx=6, pady=6)
 
         for col in range(7):
             month_frame.grid_columnconfigure(col, weight=1)

@@ -318,6 +318,32 @@ class BookingService:
             chart_revenues.append(day_rev)
             chart_appointments.append(len(day_items))
 
+        # Service category distribution
+        category_distribution = {}
+        for a in all_apps:
+            cat = a.service.category if a.service and a.service.category else "General"
+            category_distribution[cat] = category_distribution.get(cat, 0) + 1
+
+        # Staff bookings distribution
+        staff_distribution = {}
+        for a in all_apps:
+            s_name = a.staff.name if a.staff else "Unassigned"
+            staff_distribution[s_name] = staff_distribution.get(s_name, 0) + 1
+
+        # Status distribution
+        status_distribution = {
+            "Confirmed": confirmed_count,
+            "Completed": completed_count,
+            "Cancelled": cancelled_count,
+            "No-Show": no_show_count,
+        }
+
+        # Popular services
+        service_popularity = {}
+        for a in all_apps:
+            s_name = a.service.name if a.service else "Unknown"
+            service_popularity[s_name] = service_popularity.get(s_name, 0) + 1
+
         return {
             "today_count": today_count,
             "today_revenue": today_revenue,
@@ -334,4 +360,8 @@ class BookingService:
             "chart_days": chart_days,
             "chart_revenues": chart_revenues,
             "chart_appointments": chart_appointments,
+            "category_distribution": category_distribution,
+            "staff_distribution": staff_distribution,
+            "status_distribution": status_distribution,
+            "service_popularity": service_popularity,
         }

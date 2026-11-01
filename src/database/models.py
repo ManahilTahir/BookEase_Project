@@ -58,6 +58,7 @@ class Staff(Base):
     email = Column(String(100), nullable=True)
     phone = Column(String(50), nullable=True)
     role_title = Column(String(100), nullable=False, default="Specialist")
+    specialties = Column(String(255), nullable=True)  # Key clinical/service specialties
     color_code = Column(String(20), nullable=False, default="#3B82F6")
     bio = Column(Text, nullable=True)
     is_active = Column(Boolean, default=True, nullable=False)
@@ -70,7 +71,7 @@ class Staff(Base):
     appointments = relationship("Appointment", back_populates="staff")
 
     def __repr__(self):
-        return f"<Staff {self.name} - {self.role_title}>"
+        return f"<Staff {self.name} - {self.role_title} ({self.specialties})>"
 
 
 class Service(Base):
@@ -89,9 +90,34 @@ class Service(Base):
 
     staff_members = relationship("Staff", secondary=staff_services, back_populates="services")
     appointments = relationship("Appointment", back_populates="service")
+    options = relationship("ServiceOption", back_populates="service", cascade="all, delete-orphan", order_by="ServiceOption.sort_order")
 
     def __repr__(self):
         return f"<Service {self.name} (${self.price}, {self.duration_minutes}m)>"
+
+
+class ServiceOption(Base):
+    """Optional duration/price variants for a service.
+
+    A service may offer multiple durations (e.g. 30/45/60 min) at different
+    prices. If a service has no options, its default duration_minutes and
+    price are used (backward compatible).
+    """
+    __tablename__ = "service_options"
+
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    service_id = Column(Integer, ForeignKey("services.id", ondelete="CASCADE"), nullable=False, index=True)
+    label = Column(String(50), nullable=True)          # e.g. "30 min", "1 hour"
+    duration_minutes = Column(Integer, nullable=False)
+    price = Column(Float, nullable=False)
+    is_active = Column(Boolean, default=True, nullable=False)
+    sort_order = Column(Integer, default=0, nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow, nullable=False)
+
+    service = relationship("Service", back_populates="options")
+
+    def __repr__(self):
+        return f"<ServiceOption {self.label or f'{self.duration_minutes}m'} ${self.price}>"
 
 
 class StaffSchedule(Base):

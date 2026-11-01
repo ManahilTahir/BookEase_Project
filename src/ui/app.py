@@ -28,6 +28,7 @@ from src.ui.views import (
     AppointmentsView,
     CustomersView,
     StaffView,
+    CustomerBookingView,
     ServicesView,
     ReportsView,
     SettingsView,
@@ -156,7 +157,7 @@ class BookEaseApp(ctk.CTk):
             ("wizard", "✨  Booking Wizard", "manage_appointments"),
             ("appointments", "📋  Appointments", "manage_appointments"),
             ("customers", "👥  Clients", "manage_customers"),
-            ("staff", "🩺  Specialists", "manage_staff"),
+            ("customer", "👤  Customer", "manage_appointments"),
             ("services", "🏷  Services", "manage_services"),
             ("reports", "📈  Reports & Analytics", "view_reports"),
             ("settings", "⚙  Settings", "manage_settings"),
@@ -212,9 +213,46 @@ class BookEaseApp(ctk.CTk):
                 anchor="w",
             ).pack(fill="x")
 
+        # Color Theme Palette Selector
+        palette_row = ctk.CTkFrame(bottom_frame, fg_color="transparent")
+        palette_row.pack(fill="x", pady=(0, 6))
+
+        ctk.CTkLabel(
+            palette_row,
+            text="Theme",
+            font=FONT_SMALL,
+            text_color=PALETTE["dark"]["text_secondary"],
+        ).pack(side="left")
+
+        from src.ui.theme import (
+            get_theme_display_names,
+            theme_display_name_from_key,
+            get_current_theme_key,
+        )
+
+        display_names = get_theme_display_names()
+        current_display = theme_display_name_from_key(get_current_theme_key())
+
+        self.palette_menu = ctk.CTkOptionMenu(
+            palette_row,
+            values=display_names,
+            font=FONT_SMALL,
+            width=140,
+            height=26,
+            fg_color=PALETTE["dark"]["card_secondary"],
+            button_color=PALETTE["dark"]["accent"],
+            button_hover_color=PALETTE["dark"]["accent_hover"],
+            dropdown_fg_color=PALETTE["dark"]["card_bg"],
+            dropdown_hover_color=PALETTE["dark"]["card_secondary"],
+            dropdown_text_color=PALETTE["dark"]["text_primary"],
+            command=self.set_theme_palette,
+        )
+        self.palette_menu.set(current_display)
+        self.palette_menu.pack(side="right")
+
         # Theme toggle
         theme_row = ctk.CTkFrame(bottom_frame, fg_color="transparent")
-        theme_row.pack(fill="x", pady=(0, 6))
+        theme_row.pack(fill="x", pady=(0, 8))
 
         ctk.CTkLabel(
             theme_row,
@@ -229,7 +267,10 @@ class BookEaseApp(ctk.CTk):
             width=40,
             command=self.toggle_theme,
         )
-        self.theme_switch.select()
+        if self.current_theme == "Dark":
+            self.theme_switch.select()
+        else:
+            self.theme_switch.deselect()
         self.theme_switch.pack(side="right")
 
         # Sign out button
@@ -243,6 +284,27 @@ class BookEaseApp(ctk.CTk):
             command=self.handle_logout,
         ).pack(fill="x")
 
+    def set_theme_palette(self, theme_key_or_name: str):
+        """Change color palette and live refresh the workspace shell."""
+        from src.ui.theme import (
+            set_active_theme,
+            theme_key_from_display_name,
+            THEME_PALETTES,
+        )
+        key = theme_key_from_display_name(theme_key_or_name)
+        if not key:
+            key = theme_key_or_name if theme_key_or_name in THEME_PALETTES else "emerald"
+
+        set_active_theme(key, persist=True)
+
+        # Refresh entire workspace so all sidebar and canvas elements take new palette
+        self.show_workspace()
+
+        from src.ui.components.toast import show_toast
+        theme_info = THEME_PALETTES.get(key, {})
+        t_name = theme_info.get("name", key.capitalize())
+        show_toast(self, f"Color theme switched to {t_name}! ✨", level="success")
+
     def toggle_theme(self):
         """Toggle between Dark and Light CustomTkinter modes."""
         if self.theme_switch.get() == 1:
@@ -251,6 +313,11 @@ class BookEaseApp(ctk.CTk):
         else:
             ctk.set_appearance_mode("Light")
             self.current_theme = "Light"
+        mode = "dark" if self.current_theme == "Dark" else "light"
+        self.main_container.configure(fg_color=PALETTE[mode]["bg_primary"])
+        if hasattr(self, "content_canvas") and self.content_canvas.winfo_exists():
+            self.content_canvas.configure(fg_color=PALETTE[mode]["bg_primary"])
+            self.navigate(self.active_nav_key)
 
     def handle_logout(self):
         """Clear session and return to login view."""
@@ -289,7 +356,9 @@ class BookEaseApp(ctk.CTk):
             view = AppointmentsView(self.content_canvas, on_navigate_wizard=lambda: self.navigate("wizard"))
         elif key == "customers":
             view = CustomersView(self.content_canvas)
-        elif key == "staff":
+        elif key in ("customer", "staff"):
+            view = CustomerBookingView(self.content_canvas, on_navigate=self.navigate)
+        elif key == "staff_admin":
             view = StaffView(self.content_canvas)
         elif key == "services":
             view = ServicesView(self.content_canvas)

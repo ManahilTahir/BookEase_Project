@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block meta_description %}Meet the expert specialists at {{ settings.get('business_name', 'Lumière Wellness') }}. Board-certified dermatologists, master aestheticians, and licensed wellness practitioners.{% endblock %}
+
+{% block content %}
+<div class="page-hero page-hero-sm">
+    <div class="section-container">
+        <span class="section-badge">Our Team</span>
+        <h1>Meet Our Specialists</h1>
+        <p>Experienced, certified professionals dedicated to your wellbeing.</p>
+    </div>
+</div>
+
+<section class="section" aria-labelledby="specialists-list">
+    <div class="section-container">
+        <div class="specialists-grid" id="specialists-list">
+            {% for st in staff_list %}
+            <article class="specialist-profile-card">
+                <div class="spc-header">
+                    <div class="spc-avatar" style="background: {{ st.color_code }}22; border: 3px solid {{ st.color_code }};" aria-hidden="true">
+                        <span class="spc-initials" style="color: {{ st.color_code }};">
+                            {{ st.name.split()[0][0] }}{{ st.name.split()[-1][0] if st.name.split()|length > 1 else '' }}
+                        </span>
+                    </div>
+                    <div class="spc-title-block">
+                        <h2 class="spc-name">{{ st.name }}</h2>
+                        <p class="spc-role">{{ st.role_title }}</p>
+                    </div>
+                </div>
+                {% if st.bio %}
+                <p class="spc-bio">{{ st.bio }}</p>
+                {% endif %}
+                {% if st.specialties %}
+                <div class="spc-specialties">
+                    <h4>Specialties</h4>
+                    <p>{{ st.specialties }}</p>
+                </div>
+                {% endif %}
+                {% if st.services %}
+                <div class="spc-services">
+                    <h4>Services Offered</h4>
+                    <ul class="spc-service-list">
+                        {% for svc in st.services %}
+                        <li>
+                            <span class="spc-svc-name">{{ svc.name }}</span>
+                            <span class="spc-svc-price">{{ settings.get('currency_symbol', '$') }}{{ "%.0f"|format(svc.price) }}</span>
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                {% endif %}
+                <a href="{{ url_for('public.book_page') }}?staff_id={{ st.id }}" class="btn btn-primary spc-book-btn">
+                    Book with {{ st.name.split()[0] }}
+                </a>
+            </article>
+            {% else %}
+            <div class="empty-state">
+                <p>No specialists listed at this time.</p>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block sticky_cta %}
+<div class="sticky-book-btn" id="stickyBook">
+    <a href="{{ url_for('public.book_page') }}" class="btn btn-primary">✦ Book Now</a>
+</div>
+{% endblock %}

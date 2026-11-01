@@ -14,3 +14,7 @@ openpyxl>=3.1.5
 pytest>=8.3.2
 pytest-cov>=5.0.0
 pyinstaller>=6.10.0
+streamlit>=1.40.0
+flask>=3.0.0
+flask-session>=0.8.0
+gunicorn>=22.0.0

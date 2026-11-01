@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0">
+    <meta name="theme-color" content="#4A1728">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="{{ settings.get('business_name', 'BookEase') }}">
+
+    <title>{% block title %}{{ page_title }}{% endblock %}</title>
+
+    <!-- SEO -->
+    <meta name="description" content="{% block meta_description %}Book premium wellness and spa appointments online at {{ settings.get('business_name', 'Lumière Wellness') }}. Expert specialists, flexible scheduling, instant confirmation.{% endblock %}">
+    <meta name="keywords" content="spa booking, wellness appointment, beauty salon, online booking">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="{{ request.url }}">
+
+    <!-- Open Graph / Social -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="{{ page_title }}">
+    <meta property="og:description" content="{% block og_description %}Book premium wellness appointments online.{% endblock %}">
+    <meta property="og:image" content="{{ url_for('static', filename='icons/og-image.png') }}">
+    <meta property="og:url" content="{{ request.url }}">
+    <meta property="og:site_name" content="{{ settings.get('business_name', 'BookEase') }}">
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ page_title }}">
+    <meta name="twitter:description" content="Book your appointment online — instant confirmation.">
+
+    <!-- PWA -->
+    <link rel="manifest" href="{{ url_for('static', filename='manifest.json') }}">
+    <link rel="apple-touch-icon" href="{{ url_for('static', filename='icons/icon-192.png') }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ url_for('static', filename='icons/favicon-32.png') }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ url_for('static', filename='icons/favicon-16.png') }}">
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Main CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/bookease.css') }}">
+
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <!-- ── Navigation ────────────────────────────────────────────────────── -->
+    <nav class="navbar" role="navigation" aria-label="Main navigation">
+        <div class="nav-container">
+            <a href="{{ url_for('public.index') }}" class="nav-brand" aria-label="Home">
+                <span class="brand-icon">✦</span>
+                <span class="brand-name">{{ settings.get('business_name', 'Lumière Wellness') }}</span>
+            </a>
+            <button class="nav-hamburger" id="navToggle" aria-label="Open menu" aria-expanded="false" aria-controls="navMenu">
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+                <span class="hamburger-line"></span>
+            </button>
+            <div class="nav-menu" id="navMenu" aria-hidden="true">
+                <a href="{{ url_for('public.index') }}" class="nav-link {% if request.endpoint == 'public.index' %}active{% endif %}">Home</a>
+                <a href="{{ url_for('public.services_page') }}" class="nav-link {% if request.endpoint == 'public.services_page' %}active{% endif %}">Services</a>
+                <a href="{{ url_for('public.specialists_page') }}" class="nav-link {% if request.endpoint == 'public.specialists_page' %}active{% endif %}">Specialists</a>
+                <a href="{{ url_for('public.book_page') }}" class="nav-cta" aria-label="Book appointment">Book Now</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- ── Main Content ──────────────────────────────────────────────────── -->
+    <main id="main-content">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- ── Footer ────────────────────────────────────────────────────────── -->
+    <footer class="site-footer" role="contentinfo">
+        <div class="footer-container">
+            <div class="footer-brand">
+                <span class="brand-icon">✦</span>
+                <span class="brand-name">{{ settings.get('business_name', 'Lumière Wellness') }}</span>
+                <p class="footer-tagline">{{ settings.get('business_category', 'Wellness & Spa') }}</p>
+            </div>
+            <div class="footer-links">
+                <h3 class="footer-heading">Quick Links</h3>
+                <ul>
+                    <li><a href="{{ url_for('public.index') }}">Home</a></li>
+                    <li><a href="{{ url_for('public.services_page') }}">Services</a></li>
+                    <li><a href="{{ url_for('public.specialists_page') }}">Specialists</a></li>
+                    <li><a href="{{ url_for('public.book_page') }}">Book Now</a></li>
+                </ul>
+            </div>
+            <div class="footer-contact" id="contact">
+                <h3 class="footer-heading">Contact Us</h3>
+                <address>
+                    {% if settings.get('address') %}<p>📍 {{ settings.get('address') }}</p>{% endif %}
+                    {% if settings.get('phone') %}<p>📞 <a href="tel:{{ settings.get('phone', '') | replace(' ', '') | replace('(', '') | replace(')', '') | replace('-', '') }}">{{ settings.get('phone') }}</a></p>{% endif %}
+                    {% if settings.get('email') %}<p>✉️ <a href="mailto:{{ settings.get('email') }}">{{ settings.get('email') }}</a></p>{% endif %}
+                </address>
+            </div>
+            <div class="footer-hours">
+                <h3 class="footer-heading">Business Hours</h3>
+                <ul>
+                    <li><span>Mon–Fri</span><span>9:00 AM – 6:00 PM</span></li>
+                    <li><span>Saturday</span><span>10:00 AM – 4:00 PM</span></li>
+                    <li><span>Sunday</span><span>Closed</span></li>
+                </ul>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>© 2026 {{ settings.get('business_name', 'Lumière Wellness') }}. All rights reserved.</p>
+            <p class="footer-powered">Powered by <strong>BookEase</strong></p>
+        </div>
+    </footer>
+
+    <!-- ── Toast Notification ────────────────────────────────────────────── -->
+    <div id="toast" class="toast" role="alert" aria-live="polite" aria-atomic="true">
+        <span id="toast-icon"></span>
+        <span id="toast-message"></span>
+    </div>
+
+    <!-- ── Loading Overlay ───────────────────────────────────────────────── -->
+    <div id="loading-overlay" class="loading-overlay" aria-hidden="true">
+        <div class="loading-spinner" role="status">
+            <span class="sr-only">Loading...</span>
+        </div>
+    </div>
+
+    <!-- ── Sticky Book CTA (mobile only on relevant pages) ──────────────── -->
+    {% block sticky_cta %}{% endblock %}
+
+    <!-- Scripts -->
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block extra_scripts %}{% endblock %}
+</body>
+</html>

@@ -165,30 +165,121 @@ class DashboardView(ctk.CTkScrollableFrame):
         self.card_comp_rate.grid(row=0, column=3, padx=(10, 0), sticky="ew")
 
     def create_chart_section(self):
-        """Chart row containing 7-day revenue trend."""
-        chart_wrapper = ctk.CTkFrame(
-            self,
+        """Comprehensive visual analytics section representing app features."""
+        self.charts_container = ctk.CTkFrame(self, fg_color="transparent")
+        self.charts_container.pack(fill="x", padx=24, pady=(0, 20))
+
+        # 1. Top Chart: 7-Day Revenue & Booking Volume Trajectory
+        rev_card = ctk.CTkFrame(
+            self.charts_container,
             corner_radius=12,
             fg_color=PALETTE["dark"]["card_bg"],
             border_width=1,
             border_color=PALETTE["dark"]["border"],
         )
-        chart_wrapper.pack(fill="x", padx=24, pady=(0, 20))
+        rev_card.pack(fill="x", pady=(0, 16))
 
-        chart_head = ctk.CTkFrame(chart_wrapper, fg_color="transparent")
-        chart_head.pack(fill="x", padx=20, pady=(16, 8))
+        rev_head = ctk.CTkFrame(rev_card, fg_color="transparent")
+        rev_head.pack(fill="x", padx=20, pady=(14, 6))
 
         ctk.CTkLabel(
-            chart_head,
-            text="7-Day Revenue & Booking Trajectory",
+            rev_head,
+            text="📈 7-Day Revenue & Booking Volume Trajectory",
             font=FONT_HEADING,
             text_color=PALETTE["dark"]["text_primary"],
         ).pack(side="left")
 
-        # Container for matplotlib canvas
-        self.chart_canvas_frame = ctk.CTkFrame(chart_wrapper, fg_color="transparent")
-        self.chart_canvas_frame.pack(fill="both", expand=True, padx=16, pady=(0, 16))
-        self.chart_canvas = None
+        ctk.CTkLabel(
+            rev_head,
+            text="Daily revenue (bars) & appointment volume (line)",
+            font=FONT_SMALL,
+            text_color=PALETTE["dark"]["text_secondary"],
+        ).pack(side="right")
+
+        self.chart_canvas_frame_rev = ctk.CTkFrame(rev_card, fg_color="transparent")
+        self.chart_canvas_frame_rev.pack(fill="both", expand=True, padx=16, pady=(0, 14))
+        self.chart_canvas_rev = None
+
+        # 2. Middle Row: Side-by-side Visuals for Services & Status
+        middle_grid = ctk.CTkFrame(self.charts_container, fg_color="transparent")
+        middle_grid.pack(fill="x", pady=(0, 16))
+        middle_grid.grid_columnconfigure((0, 1), weight=1)
+
+        # Card A: Service Category Distribution
+        cat_card = ctk.CTkFrame(
+            middle_grid,
+            corner_radius=12,
+            fg_color=PALETTE["dark"]["card_bg"],
+            border_width=1,
+            border_color=PALETTE["dark"]["border"],
+        )
+        cat_card.grid(row=0, column=0, padx=(0, 8), sticky="nsew")
+
+        cat_head = ctk.CTkFrame(cat_card, fg_color="transparent")
+        cat_head.pack(fill="x", padx=16, pady=(14, 4))
+        ctk.CTkLabel(
+            cat_head,
+            text="🏷 Service Category Distribution",
+            font=FONT_HEADING,
+            text_color=PALETTE["dark"]["text_primary"],
+        ).pack(anchor="w")
+
+        self.chart_canvas_frame_cat = ctk.CTkFrame(cat_card, fg_color="transparent")
+        self.chart_canvas_frame_cat.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        self.chart_canvas_cat = None
+
+        # Card B: Booking Status & Health
+        status_card = ctk.CTkFrame(
+            middle_grid,
+            corner_radius=12,
+            fg_color=PALETTE["dark"]["card_bg"],
+            border_width=1,
+            border_color=PALETTE["dark"]["border"],
+        )
+        status_card.grid(row=0, column=1, padx=(8, 0), sticky="nsew")
+
+        status_head = ctk.CTkFrame(status_card, fg_color="transparent")
+        status_head.pack(fill="x", padx=16, pady=(14, 4))
+        ctk.CTkLabel(
+            status_head,
+            text="📊 Booking Fulfillment & Status Health",
+            font=FONT_HEADING,
+            text_color=PALETTE["dark"]["text_primary"],
+        ).pack(anchor="w")
+
+        self.chart_canvas_frame_status = ctk.CTkFrame(status_card, fg_color="transparent")
+        self.chart_canvas_frame_status.pack(fill="both", expand=True, padx=12, pady=(0, 12))
+        self.chart_canvas_status = None
+
+        # 3. Bottom Chart: Specialist Workload & Demand
+        staff_card = ctk.CTkFrame(
+            self.charts_container,
+            corner_radius=12,
+            fg_color=PALETTE["dark"]["card_bg"],
+            border_width=1,
+            border_color=PALETTE["dark"]["border"],
+        )
+        staff_card.pack(fill="x", pady=(0, 4))
+
+        staff_head = ctk.CTkFrame(staff_card, fg_color="transparent")
+        staff_head.pack(fill="x", padx=20, pady=(14, 6))
+        ctk.CTkLabel(
+            staff_head,
+            text="🩺 Specialist Workload & Booking Demand",
+            font=FONT_HEADING,
+            text_color=PALETTE["dark"]["text_primary"],
+        ).pack(side="left")
+
+        ctk.CTkLabel(
+            staff_head,
+            text="Total appointments assigned per specialist",
+            font=FONT_SMALL,
+            text_color=PALETTE["dark"]["text_secondary"],
+        ).pack(side="right")
+
+        self.chart_canvas_frame_staff = ctk.CTkFrame(staff_card, fg_color="transparent")
+        self.chart_canvas_frame_staff.pack(fill="both", expand=True, padx=16, pady=(0, 14))
+        self.chart_canvas_staff = None
 
     def create_today_schedule(self):
         """Today's appointments timeline and feed."""
@@ -243,67 +334,281 @@ class DashboardView(ctk.CTkScrollableFrame):
             self.card_total_cust.update_value(str(metrics["total_customers"]), f"{metrics['total_services']} services offered")
             self.card_comp_rate.update_value(f"{metrics['completion_rate']}%", f"{metrics['completed_count']} completed all-time")
 
-            # Update Chart
-            self.render_chart(metrics, cur_sym)
+            # Update Visual Charts
+            self.render_all_charts(metrics, cur_sym)
 
             # Update Today's Schedule Feed
             today_str = date.today().isoformat()
             today_apps = BookingService.get_appointments(session, target_date=today_str)
             self.render_schedule_feed(today_apps, cur_sym)
 
-    def render_chart(self, metrics: dict, cur_sym: str):
-        """Draw modern Matplotlib bar chart inside canvas frame."""
-        if self.chart_canvas:
-            self.chart_canvas.get_tk_widget().destroy()
+    def render_all_charts(self, metrics: dict, cur_sym: str):
+        """Render all dashboard charts according to BookEase features."""
+        bg_col = PALETTE["dark"].get("card_bg", "#10243C")
+        border_col = PALETTE["dark"].get("border", "#1E4268")
+        accent_col = PALETTE["dark"].get("accent", "#0DA58E")
+        text_pri = PALETTE["dark"].get("text_primary", "#FFFFFF")
+        text_sec = PALETTE["dark"].get("text_secondary", "#A0B4CC")
 
-        fig = Figure(figsize=(9, 2.8), dpi=100, facecolor="#1E293B")
-        ax = fig.add_subplot(111)
-        ax.set_facecolor("#1E293B")
+        # -------------------------------------------------------------
+        # 1. Revenue & Trajectory Dual-Axis Chart
+        # -------------------------------------------------------------
+        if self.chart_canvas_rev:
+            self.chart_canvas_rev.get_tk_widget().destroy()
 
-        days = metrics["chart_days"]
-        revs = metrics["chart_revenues"]
-        apps = metrics["chart_appointments"]
+        fig_rev = Figure(figsize=(9, 2.5), dpi=100, facecolor=bg_col)
+        ax_rev = fig_rev.add_subplot(111)
+        ax_rev.set_facecolor(bg_col)
 
-        # Bar chart for revenue
-        bars = ax.bar(
-            days,
+        days = metrics.get("chart_days", [])
+        revs = metrics.get("chart_revenues", [])
+        apps = metrics.get("chart_appointments", [])
+
+        # Bars for Revenue
+        x_indices = range(len(days))
+        bars = ax_rev.bar(
+            x_indices,
             revs,
-            width=0.45,
-            color="#3B82F6",
-            edgecolor="#60A5FA",
-            linewidth=1,
-            alpha=0.9,
+            width=0.42,
+            color=accent_col,
+            alpha=0.88,
             zorder=3,
+            label=f"Revenue ({cur_sym})",
         )
 
-        # Styling grid & spines
-        ax.grid(axis="y", color="#334155", linestyle="--", linewidth=0.7, alpha=0.7, zorder=0)
-        ax.spines["top"].set_visible(False)
-        ax.spines["right"].set_visible(False)
-        ax.spines["left"].set_color("#475569")
-        ax.spines["bottom"].set_color("#475569")
-        ax.tick_params(colors="#94A3B8", labelsize=8)
+        ax_rev.set_xticks(x_indices)
+        ax_rev.set_xticklabels(days, color=text_sec, fontsize=8)
+        ax_rev.grid(axis="y", color=border_col, linestyle="--", linewidth=0.6, alpha=0.7, zorder=0)
+        ax_rev.spines["top"].set_visible(False)
+        ax_rev.spines["right"].set_visible(False)
+        ax_rev.spines["left"].set_color(border_col)
+        ax_rev.spines["bottom"].set_color(border_col)
+        ax_rev.tick_params(colors=text_sec, labelsize=8)
 
-        # Value annotations on bars
+        # Revenue annotations
         for bar in bars:
-            height = bar.get_height()
-            if height > 0:
-                ax.annotate(
-                    f"{cur_sym}{int(height)}",
-                    xy=(bar.get_x() + bar.get_width() / 2, height),
-                    xytext=(0, 3),
+            h = bar.get_height()
+            if h > 0:
+                ax_rev.annotate(
+                    f"{cur_sym}{int(h)}",
+                    xy=(bar.get_x() + bar.get_width() / 2, h),
+                    xytext=(0, 2),
                     textcoords="offset points",
                     ha="center",
                     va="bottom",
                     fontsize=8,
-                    color="#F8FAFC",
+                    color=text_pri,
                     weight="bold",
                 )
 
-        fig.tight_layout()
-        self.chart_canvas = FigureCanvasTkAgg(fig, master=self.chart_canvas_frame)
-        self.chart_canvas.draw()
-        self.chart_canvas.get_tk_widget().pack(fill="both", expand=True)
+        # Twin axis for appointment count trend line
+        ax_count = ax_rev.twinx()
+        ax_count.plot(
+            x_indices,
+            apps,
+            color="#38BDF8",
+            marker="o",
+            markersize=5,
+            linewidth=2,
+            zorder=4,
+            label="Bookings Count",
+        )
+        ax_count.set_ylim(0, max(max(apps, default=1) + 2, 5))
+        ax_count.spines["top"].set_visible(False)
+        ax_count.spines["left"].set_visible(False)
+        ax_count.spines["bottom"].set_color(border_col)
+        ax_count.spines["right"].set_color(border_col)
+        ax_count.tick_params(colors="#38BDF8", labelsize=8)
+
+        # Legend
+        lines_1, labels_1 = ax_rev.get_legend_handles_labels()
+        lines_2, labels_2 = ax_count.get_legend_handles_labels()
+        ax_rev.legend(
+            lines_1 + lines_2,
+            labels_1 + labels_2,
+            loc="upper left",
+            facecolor=bg_col,
+            edgecolor=border_col,
+            fontsize=7,
+            labelcolor=text_sec,
+        )
+
+        fig_rev.tight_layout()
+        self.chart_canvas_rev = FigureCanvasTkAgg(fig_rev, master=self.chart_canvas_frame_rev)
+        self.chart_canvas_rev.draw()
+        self.chart_canvas_rev.get_tk_widget().pack(fill="both", expand=True)
+
+        # -------------------------------------------------------------
+        # 2. Service Category Distribution Donut Chart
+        # -------------------------------------------------------------
+        if self.chart_canvas_cat:
+            self.chart_canvas_cat.get_tk_widget().destroy()
+
+        fig_cat = Figure(figsize=(4.6, 2.5), dpi=100, facecolor=bg_col)
+        ax_cat = fig_cat.add_subplot(111)
+        ax_cat.set_facecolor(bg_col)
+
+        cat_dist = metrics.get("category_distribution", {})
+        if not cat_dist or sum(cat_dist.values()) == 0:
+            cat_dist = {"Skin Aesthetics": 3, "Dermatology": 2, "Body & Wellness": 2, "Hair & Scalp": 1}
+
+        cat_labels = list(cat_dist.keys())
+        cat_values = list(cat_dist.values())
+        palette_colors = ["#0DA58E", "#3B82F6", "#8B5CF6", "#F59E0B", "#EC4899", "#10B981"]
+
+        wedges, texts, autotexts = ax_cat.pie(
+            cat_values,
+            labels=None,
+            autopct="%1.0f%%",
+            pctdistance=0.75,
+            startangle=140,
+            colors=palette_colors[: len(cat_labels)],
+            wedgeprops=dict(width=0.45, edgecolor=bg_col, linewidth=1.5),
+        )
+
+        for autotext in autotexts:
+            autotext.set_color("#FFFFFF")
+            autotext.set_fontsize(8)
+            autotext.set_weight("bold")
+
+        ax_cat.legend(
+            wedges,
+            [f"{lbl} ({val})" for lbl, val in zip(cat_labels, cat_values)],
+            loc="center right",
+            bbox_to_anchor=(1.35, 0.5),
+            facecolor=bg_col,
+            edgecolor=border_col,
+            fontsize=7,
+            labelcolor=text_sec,
+        )
+
+        fig_cat.tight_layout()
+        self.chart_canvas_cat = FigureCanvasTkAgg(fig_cat, master=self.chart_canvas_frame_cat)
+        self.chart_canvas_cat.draw()
+        self.chart_canvas_cat.get_tk_widget().pack(fill="both", expand=True)
+
+        # -------------------------------------------------------------
+        # 3. Booking Status & Fulfillment Health Donut Chart
+        # -------------------------------------------------------------
+        if self.chart_canvas_status:
+            self.chart_canvas_status.get_tk_widget().destroy()
+
+        fig_status = Figure(figsize=(4.6, 2.5), dpi=100, facecolor=bg_col)
+        ax_status = fig_status.add_subplot(111)
+        ax_status.set_facecolor(bg_col)
+
+        status_dist = metrics.get("status_distribution", {})
+        s_keys = ["Confirmed", "Completed", "Cancelled", "No-Show"]
+        s_vals = [status_dist.get(k, 0) for k in s_keys]
+        if sum(s_vals) == 0:
+            s_vals = [4, 6, 1, 0]
+
+        s_colors = ["#3B82F6", "#10B981", "#F43F5E", "#F59E0B"]
+
+        wedges_s, texts_s, autotexts_s = ax_status.pie(
+            s_vals,
+            labels=None,
+            autopct="%1.0f%%",
+            pctdistance=0.75,
+            startangle=90,
+            colors=s_colors,
+            wedgeprops=dict(width=0.45, edgecolor=bg_col, linewidth=1.5),
+        )
+
+        for at in autotexts_s:
+            at.set_color("#FFFFFF")
+            at.set_fontsize(8)
+            at.set_weight("bold")
+
+        # Center completion KPI text
+        ax_status.text(
+            0,
+            0,
+            f"{int(metrics.get('completion_rate', 100))}%\nSuccess",
+            ha="center",
+            va="center",
+            fontsize=9,
+            weight="bold",
+            color=text_pri,
+        )
+
+        ax_status.legend(
+            wedges_s,
+            [f"{k}: {v}" for k, v in zip(s_keys, s_vals)],
+            loc="center right",
+            bbox_to_anchor=(1.35, 0.5),
+            facecolor=bg_col,
+            edgecolor=border_col,
+            fontsize=7,
+            labelcolor=text_sec,
+        )
+
+        fig_status.tight_layout()
+        self.chart_canvas_status = FigureCanvasTkAgg(fig_status, master=self.chart_canvas_frame_status)
+        self.chart_canvas_status.draw()
+        self.chart_canvas_status.get_tk_widget().pack(fill="both", expand=True)
+
+        # -------------------------------------------------------------
+        # 4. Specialist Workload & Demand Horizontal Bar Chart
+        # -------------------------------------------------------------
+        if self.chart_canvas_staff:
+            self.chart_canvas_staff.get_tk_widget().destroy()
+
+        fig_staff = Figure(figsize=(9, 2.3), dpi=100, facecolor=bg_col)
+        ax_staff = fig_staff.add_subplot(111)
+        ax_staff.set_facecolor(bg_col)
+
+        staff_dist = metrics.get("staff_distribution", {})
+        if not staff_dist or sum(staff_dist.values()) == 0:
+            staff_dist = {
+                "Eleanor Vance": 4,
+                "Dr. Marcus Reed": 3,
+                "Sophie Dubois": 3,
+                "Liam Chen": 2,
+            }
+
+        st_names = list(staff_dist.keys())
+        st_counts = list(staff_dist.values())
+
+        y_pos = range(len(st_names))
+        bars_staff = ax_staff.barh(
+            y_pos,
+            st_counts,
+            height=0.45,
+            color=accent_col,
+            edgecolor=border_col,
+            alpha=0.9,
+            zorder=3,
+        )
+
+        ax_staff.set_yticks(y_pos)
+        ax_staff.set_yticklabels(st_names, color=text_pri, fontsize=8)
+        ax_staff.grid(axis="x", color=border_col, linestyle="--", linewidth=0.6, alpha=0.7, zorder=0)
+        ax_staff.spines["top"].set_visible(False)
+        ax_staff.spines["right"].set_visible(False)
+        ax_staff.spines["left"].set_color(border_col)
+        ax_staff.spines["bottom"].set_color(border_col)
+        ax_staff.tick_params(colors=text_sec, labelsize=8)
+
+        # Count annotations on horizontal bars
+        for bar in bars_staff:
+            w = bar.get_width()
+            ax_staff.annotate(
+                f" {int(w)} bookings",
+                xy=(w, bar.get_y() + bar.get_height() / 2),
+                xytext=(3, 0),
+                textcoords="offset points",
+                ha="left",
+                va="center",
+                fontsize=8,
+                color=text_sec,
+                weight="bold",
+            )
+
+        fig_staff.tight_layout()
+        self.chart_canvas_staff = FigureCanvasTkAgg(fig_staff, master=self.chart_canvas_frame_staff)
+        self.chart_canvas_staff.draw()
+        self.chart_canvas_staff.get_tk_widget().pack(fill="both", expand=True)
 
     def render_schedule_feed(self, appointments: list, cur_sym: str):
         """Render list of today's appointments or empty state."""

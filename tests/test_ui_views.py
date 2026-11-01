@@ -33,6 +33,7 @@ def test_app_lifecycle_and_view_navigation():
         "wizard",
         "appointments",
         "customers",
+        "customer",
         "staff",
         "services",
         "reports",

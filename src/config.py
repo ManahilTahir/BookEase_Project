@@ -123,6 +123,7 @@ DEFAULT_SETTINGS = {
     "smtp_username": "",
     "smtp_password": "",
     "smtp_from_email": "bookings@lumierewellness.com",
+    "color_theme": "emerald",
 }
 
 # Day names mapping (0=Monday ... 6=Sunday)

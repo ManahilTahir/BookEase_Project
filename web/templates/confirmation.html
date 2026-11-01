@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+
+{% block content %}
+<section class="confirmation-section">
+    <div class="confirmation-container">
+        <div class="confirmation-icon" aria-hidden="true">✓</div>
+        <h1 class="confirmation-title">Booking Confirmed!</h1>
+        <p class="confirmation-subtitle">Your appointment has been successfully booked.</p>
+
+        <div class="confirmation-ref-box">
+            <span class="ref-label">Booking Reference</span>
+            <span class="ref-number" id="refNumber">{{ appt.appointment_number }}</span>
+            <button class="ref-copy-btn" onclick="copyRef()" aria-label="Copy booking reference" title="Copy to clipboard">📋</button>
+        </div>
+
+        <div class="confirmation-details">
+            <div class="conf-detail-row">
+                <span class="conf-icon" aria-hidden="true">💆</span>
+                <div>
+                    <span class="conf-label">Service</span>
+                    <span class="conf-value">{{ appt.service_name }}</span>
+                </div>
+            </div>
+            <div class="conf-detail-row">
+                <span class="conf-icon" aria-hidden="true">👤</span>
+                <div>
+                    <span class="conf-label">Specialist</span>
+                    <span class="conf-value">{{ appt.staff_name }} — {{ appt.staff_role }}</span>
+                </div>
+            </div>
+            <div class="conf-detail-row">
+                <span class="conf-icon" aria-hidden="true">📅</span>
+                <div>
+                    <span class="conf-label">Date</span>
+                    <span class="conf-value">{{ appt.date }}</span>
+                </div>
+            </div>
+            <div class="conf-detail-row">
+                <span class="conf-icon" aria-hidden="true">🕐</span>
+                <div>
+                    <span class="conf-label">Time</span>
+                    <span class="conf-value">{{ appt.start_time }} – {{ appt.end_time }}</span>
+                </div>
+            </div>
+            <div class="conf-detail-row">
+                <span class="conf-icon" aria-hidden="true">💰</span>
+                <div>
+                    <span class="conf-label">Total Amount</span>
+                    <span class="conf-value conf-price">{{ settings.get('currency_symbol', '$') }}{{ "%.2f"|format(appt.price) }}</span>
+                </div>
+            </div>
+            {% if appt.customer_name %}
+            <div class="conf-detail-row">
+                <span class="conf-icon" aria-hidden="true">📇</span>
+                <div>
+                    <span class="conf-label">Booked For</span>
+                    <span class="conf-value">{{ appt.customer_name }}</span>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <div class="confirmation-notice">
+            <p>📞 To reschedule or cancel, please call us at <strong>{{ settings.get('phone', 'our office') }}</strong> with your booking reference.</p>
+            {% if appt.notes %}
+            <p>📝 Your notes: <em>{{ appt.notes }}</em></p>
+            {% endif %}
+        </div>
+
+        <div class="confirmation-actions">
+            <a href="{{ url_for('public.book_page') }}" class="btn btn-outline">Book Another Appointment</a>
+            <a href="{{ url_for('public.index') }}" class="btn btn-primary">Back to Home</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function copyRef() {
+    const ref = document.getElementById('refNumber').textContent;
+    if (navigator.clipboard) {
+        navigator.clipboard.writeText(ref).then(() => showToast('Booking reference copied!', 'success'));
+    } else {
+        // Fallback
+        const el = document.createElement('textarea');
+        el.value = ref;
+        document.body.appendChild(el);
+        el.select();
+        document.execCommand('copy');
+        document.body.removeChild(el);
+        showToast('Booking reference copied!', 'success');
+    }
+}
+</script>
+{% endblock %}

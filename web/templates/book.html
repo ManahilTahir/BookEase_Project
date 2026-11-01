@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block meta_description %}Book your appointment online at {{ settings.get('business_name', 'Lumière Wellness') }}. Choose your service, specialist, date and time. Instant confirmation.{% endblock %}
+
+{% block extra_head %}
+<style>
+.wizard-step { display: none; }
+.wizard-step.active { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-hero page-hero-sm">
+    <div class="section-container">
+        <h1>Book Your Appointment</h1>
+        <p>Complete in 3 simple steps. No account required.</p>
+    </div>
+</div>
+
+<section class="section booking-section">
+    <div class="section-container booking-container">
+        <!-- Progress Indicator -->
+        <div class="wizard-progress" role="list" aria-label="Booking steps">
+            <div class="progress-step active" id="prog-1" role="listitem">
+                <span class="step-dot">1</span>
+                <span class="step-label">Service &amp; Specialist</span>
+            </div>
+            <div class="progress-connector"></div>
+            <div class="progress-step" id="prog-2" role="listitem">
+                <span class="step-dot">2</span>
+                <span class="step-label">Date &amp; Time</span>
+            </div>
+            <div class="progress-connector"></div>
+            <div class="progress-step" id="prog-3" role="listitem">
+                <span class="step-dot">3</span>
+                <span class="step-label">Your Details</span>
+            </div>
+        </div>
+
+        <!-- Step 1: Service & Specialist -->
+        <div class="wizard-step active" id="step-1" aria-labelledby="step1-heading">
+            <h2 id="step1-heading" class="step-title">Choose a Service</h2>
+
+            <div class="service-select-grid" id="serviceGrid">
+                {% for svc in services %}
+                <button class="service-select-card {% if preselect_service == svc.id %}selected{% endif %}"
+                        data-service-id="{{ svc.id }}"
+                        data-service-name="{{ svc.name }}"
+                        data-service-price="{{ svc.price }}"
+                        data-service-duration="{{ svc.duration_minutes }}"
+                        data-service-category="{{ svc.category }}"
+                        data-options='{{ svc.options | tojson }}'
+                        aria-pressed="{{ 'true' if preselect_service == svc.id else 'false' }}"
+                        type="button">
+                    <span class="ssc-category">{{ svc.category }}</span>
+                    <span class="ssc-name">{{ svc.name }}</span>
+                    <div class="ssc-meta">
+                        <span class="ssc-price">{{ settings.get('currency_symbol', '$') }}{{ "%.0f"|format(svc.price) }}</span>
+                        <span class="ssc-dur">{{ svc.duration_minutes }} min</span>
+                    </div>
+                    <p class="ssc-desc">{{ svc.description[:100] }}{% if svc.description|length > 100 %}…{% endif %}</p>
+                    {% if svc.options %}
+                    <span class="ssc-options-hint">⏱ Multiple durations available</span>
+                    {% endif %}
+                </button>
+                {% endfor %}
+            </div>
+
+            <div id="durationSection" class="duration-select-section" style="display:none;">
+                <h2 class="step-title">Choose Duration</h2>
+                <p class="field-hint">Select how long you'd like your appointment. Price adjusts automatically.</p>
+                <div class="duration-select-grid" id="durationGrid"></div>
+            </div>
+
+            <div id="staffSection" class="staff-select-section" style="display:none;">
+                <h2 class="step-title">Choose a Specialist</h2>
+                <div class="staff-select-grid" id="staffGrid">
+                    <!-- Populated by JS after service selection -->
+                </div>
+            </div>
+
+            <div class="wizard-nav wizard-nav-right">
+                <button class="btn btn-primary" id="step1Next" disabled onclick="goToStep(2)">
+                    Next: Pick a Time →
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Date & Time -->
+        <div class="wizard-step" id="step-2" aria-labelledby="step2-heading">
+            <h2 id="step2-heading" class="step-title">Choose Date &amp; Time</h2>
+
+            <!-- Booking Summary Bar -->
+            <div class="booking-summary-bar" id="summaryBar1">
+                <span id="sum-service-name">—</span>
+                <span class="sum-sep">with</span>
+                <span id="sum-staff-name">—</span>
+            </div>
+
+            <!-- Date Picker -->
+            <div class="date-picker-section">
+                <label class="field-label" for="datePicker">Select Date</label>
+                <input type="date"
+                       id="datePicker"
+                       class="date-input"
+                       min="{{ today }}"
+                       max="{{ max_date }}"
+                       aria-label="Select appointment date"
+                       autocomplete="off">
+                <p class="field-hint">Available dates are highlighted. Select a date to see time slots.</p>
+            </div>
+
+            <!-- Time Slots -->
+            <div class="slots-section" id="slotsSection" aria-live="polite">
+                <label class="field-label">Available Time Slots</label>
+                <div class="slots-grid" id="slotsGrid">
+                    <div class="slots-placeholder">
+                        <p>Select a date above to see available time slots.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="wizard-nav">
+                <button class="btn btn-outline" onclick="goToStep(1)">← Back</button>
+                <button class="btn btn-primary" id="step2Next" disabled onclick="goToStep(3)">
+                    Next: Your Details →
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Customer Details -->
+        <div class="wizard-step" id="step-3" aria-labelledby="step3-heading">
+            <h2 id="step3-heading" class="step-title">Your Details</h2>
+
+            <!-- Full Summary -->
+            <div class="booking-review-card" id="reviewCard">
+                <h3>Booking Summary</h3>
+                <div class="review-rows">
+                    <div class="review-row">
+                        <span class="review-label">Service</span>
+                        <span class="review-value" id="rev-service">—</span>
+                    </div>
+                    <div class="review-row">
+                        <span class="review-label">Duration</span>
+                        <span class="review-value" id="rev-duration">—</span>
+                    </div>
+                    <div class="review-row">
+                        <span class="review-label">Specialist</span>
+                        <span class="review-value" id="rev-staff">—</span>
+                    </div>
+                    <div class="review-row">
+                        <span class="review-label">Date</span>
+                        <span class="review-value" id="rev-date">—</span>
+                    </div>
+                    <div class="review-row">
+                        <span class="review-label">Time</span>
+                        <span class="review-value" id="rev-time">—</span>
+                    </div>
+                    <div class="review-row review-row-total">
+                        <span class="review-label">Total</span>
+                        <span class="review-value review-price" id="rev-price">—</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Customer Form -->
+            <form id="bookingForm" class="booking-form" novalidate aria-label="Customer details form">
+                <div class="form-group">
+                    <label class="field-label" for="custName">Full Name <span class="required-marker" aria-label="required">*</span></label>
+                    <input type="text" id="custName" name="customer_name" class="form-input"
+                           placeholder="e.g. Jane Smith" required
+                           autocomplete="name" minlength="2" maxlength="100"
+                           aria-required="true" aria-describedby="custName-error">
+                    <span class="field-error" id="custName-error" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="custPhone">Phone Number <span class="required-marker" aria-label="required">*</span></label>
+                    <input type="tel" id="custPhone" name="customer_phone" class="form-input"
+                           placeholder="e.g. +1 555 123 4567" required
+                           autocomplete="tel" maxlength="30"
+                           aria-required="true" aria-describedby="custPhone-error">
+                    <span class="field-error" id="custPhone-error" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="custEmail">Email Address <span class="optional-marker">(optional)</span></label>
+                    <input type="email" id="custEmail" name="customer_email" class="form-input"
+                           placeholder="e.g. jane@example.com"
+                           autocomplete="email" maxlength="100"
+                           aria-describedby="custEmail-error">
+                    <span class="field-error" id="custEmail-error" role="alert"></span>
+                </div>
+
+                <div class="form-group">
+                    <label class="field-label" for="custNotes">Notes <span class="optional-marker">(optional)</span></label>
+                    <textarea id="custNotes" name="notes" class="form-textarea"
+                              placeholder="e.g. allergies, preferences, special requests…"
+                              rows="3" maxlength="500"
+                              aria-describedby="custNotes-hint"></textarea>
+                    <span class="field-hint" id="custNotes-hint">Maximum 500 characters</span>
+                </div>
+
+                <div class="form-consent">
+                    <p>By confirming, you agree that your name, phone number, and notes will be stored to manage your booking.</p>
+                </div>
+            </form>
+
+            <div class="wizard-nav">
+                <button class="btn btn-outline" onclick="goToStep(2)">← Back</button>
+                <button class="btn btn-primary btn-lg" id="confirmBtn" onclick="submitBooking()">
+                    ✓ Confirm Booking
+                </button>
+            </div>
+
+            <!-- Error Banner -->
+            <div class="booking-error-banner" id="bookingError" style="display:none;" role="alert" aria-live="assertive">
+                <span id="bookingErrorMsg"></span>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Hidden state -->
+<input type="hidden" id="selectedServiceId" value="{{ preselect_service or '' }}">
+<input type="hidden" id="selectedStaffId" value="{{ preselect_staff or '' }}">
+<input type="hidden" id="selectedDate" value="">
+<input type="hidden" id="selectedStartTime" value="">
+<input type="hidden" id="currencySymbol" value="{{ settings.get('currency_symbol', '$') }}">
+<input type="hidden" id="todayDate" value="{{ today }}">
+
+{% endblock %}
+
+{% block extra_scripts %}
+<script src="{{ url_for('static', filename='js/booking.js') }}"></script>
+{% endblock %}

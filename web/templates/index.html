@@ -1,0 +1,180 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<!-- ── Hero Section ──────────────────────────────────────────────────────── -->
+<section class="hero" aria-labelledby="hero-heading">
+    <div class="hero-content">
+        <span class="hero-badge">✦ Premium Wellness Experience</span>
+        <h1 id="hero-heading" class="hero-title">
+            Your Path to<br><em>Radiant Wellbeing</em>
+        </h1>
+        <p class="hero-subtitle">
+            Expert specialists. Luxury treatments. Instant online booking.
+            Experience the finest in skin, body, and holistic wellness care.
+        </p>
+        <div class="hero-actions">
+            <a href="{{ url_for('public.book_page') }}" class="btn btn-primary btn-lg" aria-label="Book an appointment">
+                Book Your Appointment
+            </a>
+            <a href="{{ url_for('public.services_page') }}" class="btn btn-outline btn-lg">
+                Explore Services
+            </a>
+        </div>
+        <div class="hero-stats">
+            <div class="hero-stat">
+                <span class="stat-number">8+</span>
+                <span class="stat-label">Expert Specialists</span>
+            </div>
+            <div class="hero-stat">
+                <span class="stat-number">9+</span>
+                <span class="stat-label">Premium Services</span>
+            </div>
+            <div class="hero-stat">
+                <span class="stat-number">100%</span>
+                <span class="stat-label">Satisfaction Focus</span>
+            </div>
+        </div>
+    </div>
+    <div class="hero-visual" aria-hidden="true">
+        <div class="hero-orb hero-orb-1"></div>
+        <div class="hero-orb hero-orb-2"></div>
+        <div class="hero-orb hero-orb-3"></div>
+    </div>
+</section>
+
+<!-- ── Services Preview ───────────────────────────────────────────────────── -->
+<section class="section services-preview" aria-labelledby="services-heading">
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-badge">Our Services</span>
+            <h2 id="services-heading">Treatments Tailored for You</h2>
+            <p class="section-subtext">From clinical skin care to holistic wellness, every service is designed for maximum results and comfort.</p>
+        </div>
+
+        {% if categories %}
+            {% for category, svcs in categories.items() %}
+            <div class="service-category-section">
+                <h3 class="category-label">{{ category }}</h3>
+                <div class="service-cards-grid">
+                    {% for svc in svcs[:3] %}
+                    <article class="service-card" data-service-id="{{ svc.id }}">
+                        <div class="service-card-body">
+                            <div class="service-card-header">
+                                <h4 class="service-name">{{ svc.name }}</h4>
+                                <span class="service-price">{{ settings.get('currency_symbol', '$') }}{{ "%.0f"|format(svc.price) }}</span>
+                            </div>
+                            <p class="service-desc">{{ svc.description[:120] }}{% if svc.description|length > 120 %}…{% endif %}</p>
+                            <div class="service-card-footer">
+                                <span class="service-duration">🕐 {{ svc.duration_minutes }} min</span>
+                                <a href="{{ url_for('public.book_page') }}?service_id={{ svc.id }}" class="btn btn-primary btn-sm">Book Now</a>
+                            </div>
+                        </div>
+                    </article>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div class="empty-state">
+                <p>Services are being updated. Please check back soon.</p>
+            </div>
+        {% endif %}
+
+        <div class="section-cta">
+            <a href="{{ url_for('public.services_page') }}" class="btn btn-outline">View All Services →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ── Why Choose Us ──────────────────────────────────────────────────────── -->
+<section class="section why-us" aria-labelledby="why-heading">
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-badge">Why Lumière</span>
+            <h2 id="why-heading">The Lumière Difference</h2>
+        </div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <div class="feature-icon" aria-hidden="true">🏆</div>
+                <h3>Expert Specialists</h3>
+                <p>Board-certified dermatologists, master aestheticians, and licensed wellness practitioners.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" aria-hidden="true">📱</div>
+                <h3>Instant Online Booking</h3>
+                <p>Book from any device, 24/7. Choose your specialist, date, and time in minutes.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" aria-hidden="true">✓</div>
+                <h3>Instant Confirmation</h3>
+                <p>Receive your booking reference immediately. No waiting, no phone calls required.</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon" aria-hidden="true">🌿</div>
+                <h3>Premium Products</h3>
+                <p>We use only pharmaceutical-grade and certified organic products in every treatment.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ── Specialists Preview ────────────────────────────────────────────────── -->
+<section class="section specialists-preview" aria-labelledby="specialists-heading">
+    <div class="section-container">
+        <div class="section-header">
+            <span class="section-badge">Our Team</span>
+            <h2 id="specialists-heading">Meet Our Specialists</h2>
+            <p class="section-subtext">Highly qualified professionals dedicated to your wellbeing.</p>
+        </div>
+        <div class="staff-cards-grid">
+            {% for st in staff_list[:4] %}
+            <article class="staff-card">
+                <div class="staff-avatar" style="background: {{ st.color_code }}20; border-color: {{ st.color_code }};" aria-hidden="true">
+                    <span class="staff-initials" style="color: {{ st.color_code }};">
+                        {{ st.name.split()[0][0] }}{{ st.name.split()[-1][0] if st.name.split()|length > 1 else '' }}
+                    </span>
+                </div>
+                <div class="staff-info">
+                    <h4 class="staff-name">{{ st.name }}</h4>
+                    <p class="staff-title">{{ st.role_title }}</p>
+                    {% if st.specialties %}
+                    <p class="staff-specialties">{{ st.specialties[:80] }}{% if st.specialties|length > 80 %}…{% endif %}</p>
+                    {% endif %}
+                    {% if st.services %}
+                    <div class="staff-services-preview">
+                        {% for svc in st.services[:2] %}
+                        <span class="service-tag">{{ svc.name }}</span>
+                        {% endfor %}
+                        {% if st.services|length > 2 %}
+                        <span class="service-tag service-tag-more">+{{ st.services|length - 2 }} more</span>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    <a href="{{ url_for('public.book_page') }}?staff_id={{ st.id }}" class="btn btn-outline btn-sm">Book with {{ st.name.split()[0] }}</a>
+                </div>
+            </article>
+            {% endfor %}
+        </div>
+        <div class="section-cta">
+            <a href="{{ url_for('public.specialists_page') }}" class="btn btn-outline">Meet All Specialists →</a>
+        </div>
+    </div>
+</section>
+
+<!-- ── Final CTA Banner ───────────────────────────────────────────────────── -->
+<section class="cta-banner" aria-labelledby="cta-heading">
+    <div class="cta-container">
+        <h2 id="cta-heading">Ready for Your Transformation?</h2>
+        <p>Book your appointment in under 2 minutes. No account required.</p>
+        <a href="{{ url_for('public.book_page') }}" class="btn btn-primary btn-xl">Book Now — It's Free</a>
+    </div>
+</section>
+
+{% endblock %}
+
+{% block sticky_cta %}
+<div class="sticky-book-btn" id="stickyBook">
+    <a href="{{ url_for('public.book_page') }}" class="btn btn-primary">✦ Book Now</a>
+</div>
+{% endblock %}

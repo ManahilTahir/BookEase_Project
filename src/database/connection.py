@@ -18,11 +18,18 @@ engine = create_engine(
 
 @event.listens_for(engine, "connect")
 def set_sqlite_pragma(dbapi_connection, connection_record):
-    """Enable foreign key constraints and WAL mode for SQLite concurrency."""
+    """Enable foreign key constraints, WAL mode, and busy timeout for SQLite concurrency.
+
+    WAL mode allows concurrent readers alongside a single writer — essential
+    when the desktop app and Streamlit web app share the same database file.
+    ``busy_timeout`` makes SQLite wait (instead of immediately erroring with
+    "database is locked") when both apps try to write at the same time.
+    """
     cursor = dbapi_connection.cursor()
     cursor.execute("PRAGMA foreign_keys=ON")
     cursor.execute("PRAGMA journal_mode=WAL")
     cursor.execute("PRAGMA synchronous=NORMAL")
+    cursor.execute("PRAGMA busy_timeout=5000")
     cursor.close()
 
 
@@ -39,7 +46,12 @@ SessionLocal = scoped_session(
 
 @contextmanager
 def get_db():
-    """Context manager for safe database transactions."""
+    """Context manager for safe database transactions.
+
+    Calls ``SessionLocal.remove()`` on exit so the scoped-session registry
+    is cleaned up per-thread — prevents stale sessions when Streamlit's
+    thread pool reuses a thread for a different user/request.
+    """
     session = SessionLocal()
     try:
         yield session
@@ -49,14 +61,29 @@ def get_db():
         raise
     finally:
         session.close()
+        SessionLocal.remove()
 
 
 def init_db():
-    """Initialize database tables and seed initial data if needed."""
+    """Initialize database tables, run migrations, and seed initial data if needed."""
     # Ensure data directory exists
     DB_PATH.parent.mkdir(parents=True, exist_ok=True)
     Base.metadata.create_all(bind=engine)
     
-    from src.database.seed_data import seed_initial_data
+    # Safe SQLite column migration for staff.specialties
+    try:
+        with engine.connect() as conn:
+            cursor = conn.connection.cursor()
+            cursor.execute("PRAGMA table_info(staff)")
+            columns = [row[1] for row in cursor.fetchall()]
+            if "specialties" not in columns:
+                cursor.execute("ALTER TABLE staff ADD COLUMN specialties VARCHAR(255)")
+                conn.connection.commit()
+            cursor.close()
+    except Exception:
+        pass
+
+    from src.database.seed_data import seed_initial_data, sync_and_seed_staff
     with get_db() as session:
         seed_initial_data(session)
+        sync_and_seed_staff(session)

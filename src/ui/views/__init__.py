@@ -7,6 +7,7 @@ from src.ui.views.calendar_view import CalendarView
 from src.ui.views.appointments_view import AppointmentsView
 from src.ui.views.customers_view import CustomersView
 from src.ui.views.staff_view import StaffView
+from src.ui.views.customer_booking_view import CustomerBookingView
 from src.ui.views.services_view import ServicesView
 from src.ui.views.reports_view import ReportsView
 from src.ui.views.settings_view import SettingsView
@@ -19,6 +20,7 @@ __all__ = [
     "AppointmentsView",
     "CustomersView",
     "StaffView",
+    "CustomerBookingView",
     "ServicesView",
     "ReportsView",
     "SettingsView",

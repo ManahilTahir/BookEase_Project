@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="internal-dashboard-section">
+    <div class="section-container">
+        <div class="dashboard-header">
+            <h1>Internal Dashboard</h1>
+            <p>Welcome back, <strong>{{ user_name }}</strong> ({{ user_role | title }})</p>
+            <a href="{{ url_for('internal.logout') }}" class="btn btn-outline btn-sm">Sign Out</a>
+        </div>
+        <div class="dashboard-notice">
+            <div class="notice-card">
+                <h2>Desktop Application Required</h2>
+                <p>Full staff management, scheduling, reporting, and customer management features are available in the <strong>BookEase Desktop Application</strong>.</p>
+                <p>This web portal is for customer-facing bookings. Use the desktop app for internal operations.</p>
+            </div>
+        </div>
+        <div class="dashboard-links">
+            <a href="{{ url_for('public.index') }}" class="btn btn-primary">View Public Website</a>
+            <a href="{{ url_for('public.book_page') }}" class="btn btn-outline">Test Booking Flow</a>
+        </div>
+    </div>
+</section>
+{% endblock %}
