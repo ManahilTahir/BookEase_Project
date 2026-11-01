@@ -1,0 +1,991 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BookEase — Database & Data-Flow Diagrams</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js"></script>
+    <style>
+        :root {
+            --bg-primary: #1A0A0E;
+            --bg-secondary: #2A1118;
+            --bg-card: #1E1015;
+            --bg-hover: #3A1A24;
+            --accent: #C4627A;
+            --accent-light: #E08BA0;
+            --accent-dark: #9C4A60;
+            --blue: #3B82F6;
+            --blue-dark: #1E3A8A;
+            --text: #F5E6EA;
+            --text-muted: #A89090;
+            --text-dim: #7A6060;
+            --border: #3D2028;
+            --pk: #FBBF24;
+            --fk: #60A5FA;
+            --uk: #34D399;
+            --success: #10B981;
+            --shadow: 0 4px 24px rgba(0,0,0,0.4);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', 'Inter', system-ui, -apple-system, sans-serif;
+            background: var(--bg-primary);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* ── Header ─────────────────────────────────────── */
+        header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-primary));
+            border-bottom: 3px solid var(--accent);
+            padding: 28px 40px 20px;
+            box-shadow: var(--shadow);
+        }
+
+        header h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: var(--text);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        header h1 .logo { color: var(--accent); font-size: 1.5rem; }
+
+        header .subtitle {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-top: 6px;
+        }
+
+        header .meta {
+            display: flex;
+            gap: 24px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+
+        header .meta span {
+            font-size: 0.8rem;
+            color: var(--text-dim);
+            background: var(--bg-card);
+            padding: 4px 12px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+        }
+
+        /* ── Tabs ──────────────────────────────────────── */
+        .tabs {
+            display: flex;
+            gap: 4px;
+            padding: 0 40px;
+            background: var(--bg-secondary);
+            border-bottom: 2px solid var(--border);
+            overflow-x: auto;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text-muted);
+            padding: 14px 24px;
+            font-size: 0.9rem;
+            font-weight: 600;
+            cursor: pointer;
+            white-space: nowrap;
+            border-bottom: 3px solid transparent;
+            transition: all 0.2s ease;
+        }
+
+        .tab-btn:hover {
+            color: var(--text);
+            background: var(--bg-hover);
+        }
+
+        .tab-btn.active {
+            color: var(--accent);
+            border-bottom-color: var(--accent);
+        }
+
+        /* ── Main Content ──────────────────────────────── */
+        main { padding: 24px 40px; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        /* ── Diagram Container ─────────────────────────── */
+        .diagram-wrapper {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+            margin-bottom: 24px;
+        }
+
+        .diagram-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 10px 16px;
+            background: var(--bg-secondary);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .diagram-toolbar .label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--text-muted);
+        }
+
+        .toolbar-buttons { display: flex; gap: 6px; }
+
+        .tool-btn {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-muted);
+            width: 36px;
+            height: 36px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+
+        .tool-btn:hover {
+            background: var(--bg-hover);
+            color: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .tool-btn:active { transform: scale(0.92); }
+
+        .diagram-viewport {
+            position: relative;
+            height: 600px;
+            overflow: hidden;
+            cursor: grab;
+            background: var(--bg-primary);
+        }
+
+        .diagram-viewport.grabbing { cursor: grabbing; }
+
+        .diagram-canvas {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform-origin: center center;
+            transition: none;
+        }
+
+        .diagram-canvas .mermaid {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .zoom-indicator {
+            position: absolute;
+            bottom: 12px;
+            right: 12px;
+            background: var(--bg-secondary);
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 4px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            pointer-events: none;
+        }
+
+        /* ── Explanation ───────────────────────────────── */
+        .explanation {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+        }
+
+        .explanation h3 {
+            color: var(--accent);
+            font-size: 1.1rem;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .explanation p {
+            color: var(--text-muted);
+            font-size: 0.9rem;
+            margin-bottom: 10px;
+        }
+
+        .explanation ul {
+            list-style: none;
+            padding: 0;
+        }
+
+        .explanation li {
+            color: var(--text-muted);
+            font-size: 0.88rem;
+            padding: 4px 0 4px 20px;
+            position: relative;
+        }
+
+        .explanation li::before {
+            content: '▸';
+            color: var(--accent);
+            position: absolute;
+            left: 0;
+        }
+
+        /* ── Tables ────────────────────────────────────── */
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 12px;
+            font-size: 0.85rem;
+        }
+
+        .data-table th {
+            background: var(--bg-secondary);
+            color: var(--accent);
+            padding: 10px 14px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .data-table td {
+            padding: 8px 14px;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .data-table tr:hover td { background: var(--bg-hover); }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 4px;
+            font-size: 0.72rem;
+            font-weight: 700;
+        }
+
+        .badge-pk { background: rgba(251,191,36,0.15); color: var(--pk); }
+        .badge-fk { background: rgba(96,165,250,0.15); color: var(--fk); }
+        .badge-uk { background: rgba(52,211,153,0.15); color: var(--uk); }
+
+        /* ── Legend ────────────────────────────────────── */
+        .legend {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            padding: 12px 16px;
+            background: var(--bg-secondary);
+            border-top: 1px solid var(--border);
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.78rem;
+            color: var(--text-muted);
+        }
+
+        .legend-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 3px;
+        }
+
+        /* ── Footer ────────────────────────────────────── */
+        footer {
+            text-align: center;
+            padding: 20px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+
+        /* ── Responsive ────────────────────────────────── */
+        @media (max-width: 768px) {
+            header, .tabs, main { padding-left: 16px; padding-right: 16px; }
+            .diagram-viewport { height: 400px; }
+            header h1 { font-size: 1.3rem; }
+        }
+
+        /* ── Mermaid overrides ─────────────────────────── */
+        .mermaid svg { max-width: none !important; }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1><span class="logo">✦</span> BookEase — Database & Data-Flow Diagrams</h1>
+    <div class="subtitle">Professional Universal Booking Management v1.0.0 — Lumière Wellness & Spa</div>
+    <div class="meta">
+        <span>📊 SQLite (WAL mode)</span>
+        <span>🐍 Python 3.13</span>
+        <span>📦 10 Entities + 1 Association</span>
+        <span>⚙️ 5 Subsystems</span>
+    </div>
+</header>
+
+<nav class="tabs">
+    <button class="tab-btn active" data-tab="erd">1. ERD — Entity Relationship</button>
+    <button class="tab-btn" data-tab="dfd0">2. DFD Level 0 — Context</button>
+    <button class="tab-btn" data-tab="dfd1">3. DFD Level 1 — Subsystems</button>
+    <button class="tab-btn" data-tab="dfd2">4. DFD Level 2 — Booking Detail</button>
+</nav>
+
+<main>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 1: ERD                                                       -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section class="tab-content active" id="tab-erd">
+
+    <div class="diagram-wrapper">
+        <div class="diagram-toolbar">
+            <span class="label">Entity Relationship Diagram — 10 Entities + 1 Association Table</span>
+            <div class="toolbar-buttons">
+                <button class="tool-btn" onclick="zoom('erd', 1.2)" title="Zoom In">+</button>
+                <button class="tool-btn" onclick="zoom('erd', 0.8)" title="Zoom Out">−</button>
+                <button class="tool-btn" onclick="fitDiagram('erd')" title="Fit to Screen">⊡</button>
+                <button class="tool-btn" onclick="resetDiagram('erd')" title="Reset">⟲</button>
+            </div>
+        </div>
+        <div class="diagram-viewport" id="viewport-erd" onwheel="onWheel(event,'erd')">
+            <div class="diagram-canvas" id="canvas-erd">
+                <div class="mermaid">
+erDiagram
+    USER {
+        int id PK
+        string username UK
+        string email UK
+        string password_hash
+        string full_name
+        string role
+        bool is_active
+        datetime created_at
+        datetime updated_at
+    }
+    STAFF {
+        int id PK
+        int user_id FK
+        string name
+        string email
+        string phone
+        string role_title
+        string specialties
+        string color_code
+        text bio
+        bool is_active
+        datetime created_at
+    }
+    SERVICE {
+        int id PK
+        string name
+        string category
+        text description
+        int duration_minutes
+        int buffer_minutes
+        float price
+        bool is_active
+        datetime created_at
+    }
+    SERVICE_OPTION {
+        int id PK
+        int service_id FK
+        string label
+        int duration_minutes
+        float price
+        bool is_active
+        int sort_order
+        datetime created_at
+    }
+    STAFF_SCHEDULE {
+        int id PK
+        int staff_id FK
+        int day_of_week
+        bool is_working
+        string start_time
+        string end_time
+        string break_start
+        string break_end
+    }
+    STAFF_LEAVE {
+        int id PK
+        int staff_id FK
+        string start_date
+        string end_date
+        string reason
+        string status
+        datetime created_at
+    }
+    CUSTOMER {
+        int id PK
+        string name
+        string email
+        string phone
+        text notes
+        int total_bookings
+        datetime created_at
+        datetime updated_at
+    }
+    APPOINTMENT {
+        int id PK
+        string appointment_number UK
+        int customer_id FK
+        int staff_id FK
+        int service_id FK
+        string date
+        string start_time
+        string end_time
+        string status
+        float price
+        text notes
+        text cancellation_reason
+        bool reminder_sent
+        int created_by_user_id FK
+        datetime created_at
+        datetime updated_at
+    }
+    BUSINESS_SETTING {
+        int id PK
+        string key UK
+        text value
+        datetime updated_at
+    }
+    AUDIT_LOG {
+        int id PK
+        int user_id FK
+        string user_name
+        string action
+        string entity_type
+        string entity_id
+        text details
+        string ip_or_source
+        datetime created_at
+    }
+    USER ||--o| STAFF : "has profile 1:1"
+    USER ||--o{ AUDIT_LOG : "logs 1:N"
+    USER ||--o{ APPOINTMENT : "creates 1:N"
+    STAFF }o--o{ SERVICE : "assigned M:N"
+    STAFF ||--o{ STAFF_SCHEDULE : "schedule 1:N"
+    STAFF ||--o{ STAFF_LEAVE : "leaves 1:N"
+    STAFF ||--o{ APPOINTMENT : "handles 1:N"
+    SERVICE ||--o{ SERVICE_OPTION : "options 1:N"
+    SERVICE ||--o{ APPOINTMENT : "booked 1:N"
+    CUSTOMER ||--o{ APPOINTMENT : "owns 1:N"
+                </div>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--pk)"></span> Primary Key (PK)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--fk)"></span> Foreign Key (FK)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--uk)"></span> Unique Key (UK)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span> Relationship Line</div>
+        </div>
+    </div>
+
+    <div class="explanation">
+        <h3>📋 About This Diagram</h3>
+        <p>The Entity Relationship Diagram shows the complete database schema of BookEase. The system has <strong>10 entities</strong> and <strong>1 association table</strong> (<code>staff_services</code>) that implements the many-to-many relationship between Staff and Service.</p>
+        <p><strong>Key relationships:</strong></p>
+        <ul>
+            <li><strong>User ↔ Staff</strong> (1:1) — A user account may optionally link to a staff profile</li>
+            <li><strong>Staff ↔ Service</strong> (M:N) — Staff are assigned to multiple services via <code>staff_services</code></li>
+            <li><strong>Customer → Appointment</strong> (1:N) — A customer can have many appointments over time</li>
+            <li><strong>Appointment</strong> — The central transaction entity, linking Customer, Staff, Service, and User (creator)</li>
+        </ul>
+        <table class="data-table">
+            <thead>
+                <tr><th>Entity</th><th>Table</th><th>PK</th><th>Key FKs</th><th>Description</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>User</strong></td><td>users</td><td><span class="badge badge-pk">id</span></td><td>—</td><td>Auth account with role-based access</td></tr>
+                <tr><td><strong>Staff</strong></td><td>staff</td><td><span class="badge badge-pk">id</span></td><td><span class="badge badge-fk">user_id</span></td><td>Staff specialist profile</td></tr>
+                <tr><td><strong>Service</strong></td><td>services</td><td><span class="badge badge-pk">id</span></td><td>—</td><td>Bookable service with duration & price</td></tr>
+                <tr><td><strong>ServiceOption</strong></td><td>service_options</td><td><span class="badge badge-pk">id</span></td><td><span class="badge badge-fk">service_id</span></td><td>Duration/price variant of a service</td></tr>
+                <tr><td><strong>StaffSchedule</strong></td><td>staff_schedules</td><td><span class="badge badge-pk">id</span></td><td><span class="badge badge-fk">staff_id</span></td><td>Weekly working schedule + breaks</td></tr>
+                <tr><td><strong>StaffLeave</strong></td><td>staff_leaves</td><td><span class="badge badge-pk">id</span></td><td><span class="badge badge-fk">staff_id</span></td><td>Vacation / sick leave / holiday</td></tr>
+                <tr><td><strong>Customer</strong></td><td>customers</td><td><span class="badge badge-pk">id</span></td><td>—</td><td>Customer profile & booking history</td></tr>
+                <tr><td><strong>Appointment</strong></td><td>appointments</td><td><span class="badge badge-pk">id</span></td><td><span class="badge badge-fk">customer_id</span> <span class="badge badge-fk">staff_id</span> <span class="badge badge-fk">service_id</span></td><td>Core booking transaction</td></tr>
+                <tr><td><strong>BusinessSetting</strong></td><td>business_settings</td><td><span class="badge badge-pk">id</span></td><td>—</td><td>Key-value business configuration</td></tr>
+                <tr><td><strong>AuditLog</strong></td><td>audit_logs</td><td><span class="badge badge-pk">id</span></td><td><span class="badge badge-fk">user_id</span></td><td>Audit trail for sensitive actions</td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 2: DFD Level 0                                               -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section class="tab-content" id="tab-dfd0">
+
+    <div class="diagram-wrapper">
+        <div class="diagram-toolbar">
+            <span class="label">DFD Level 0 — Context Diagram (All Actors & System)</span>
+            <div class="toolbar-buttons">
+                <button class="tool-btn" onclick="zoom('dfd0', 1.2)" title="Zoom In">+</button>
+                <button class="tool-btn" onclick="zoom('dfd0', 0.8)" title="Zoom Out">−</button>
+                <button class="tool-btn" onclick="fitDiagram('dfd0')" title="Fit to Screen">⊡</button>
+                <button class="tool-btn" onclick="resetDiagram('dfd0')" title="Reset">⟲</button>
+            </div>
+        </div>
+        <div class="diagram-viewport" id="viewport-dfd0" onwheel="onWheel(event,'dfd0')">
+            <div class="diagram-canvas" id="canvas-dfd0">
+                <div class="mermaid">
+flowchart LR
+    Customer["Customer\n(Website Visitor)"]
+    Staff["Staff\n(Specialist)"]
+    Admin["Admin\n(System Administrator)"]
+    Owner["Owner\n(Business Owner)"]
+    System(("BookEase\nBooking System"))
+    DB[("D1\nSQLite Database\n(data/bookease.db)")]
+
+    Customer -->|"Service browse request"| System
+    System -->|"Available services & specialists"| Customer
+    Customer -->|"Booking details"| System
+    System -->|"Booking confirmation\n(appointment number)"| Customer
+
+    Staff -->|"Login credentials"| System
+    System -->|"Dashboard & calendar"| Staff
+    Staff -->|"Status update\n(confirm/complete/cancel)"| System
+    Staff -->|"Customer search"| System
+    System -->|"Customer details & history"| Staff
+
+    Admin -->|"Login credentials"| System
+    Admin -->|"Manage staff & schedules"| System
+    Admin -->|"Manage services & options"| System
+    Admin -->|"Manage users & roles"| System
+    Admin -->|"Configure settings"| System
+    Admin -->|"Request reports / export"| System
+    System -->|"Reports, analytics, audit logs"| Admin
+    Admin -->|"Backup / restore"| System
+    System -->|"Backup file"| Admin
+
+    Owner -->|"Login credentials"| System
+    Owner -->|"Manage staff & schedules"| System
+    Owner -->|"Manage services & options"| System
+    Owner -->|"Configure settings"| System
+    Owner -->|"Request reports / export"| System
+    System -->|"Reports, analytics, audit logs"| Owner
+
+    System <-->|"Read / Write\n(all tables)"| DB
+                </div>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span> External Entity (Actor)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Process (System)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--success)"></span> Data Store</div>
+            <div class="legend-item">→ Data Flow</div>
+        </div>
+    </div>
+
+    <div class="explanation">
+        <h3>📋 About This Diagram</h3>
+        <p>The Level 0 DFD (context diagram) shows the entire BookEase system as a single process and all external entities (actors) that interact with it. This is the highest-level view of the system.</p>
+        <p><strong>Four actors</strong> interact with the system:</p>
+        <ul>
+            <li><strong>Customer</strong> — External user who browses services and books appointments via the Streamlit website</li>
+            <li><strong>Staff</strong> — Internal specialist who manages appointments, calendar, and customers via the desktop app</li>
+            <li><strong>Admin</strong> — Full-access internal user who manages all system configuration, users, and backups</li>
+            <li><strong>Owner</strong> — Business owner with all admin permissions except user management</li>
+        </ul>
+        <p>The central <strong>SQLite database</strong> (D1) stores all data and is accessed by the system for both reading and writing.</p>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 3: DFD Level 1                                               -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section class="tab-content" id="tab-dfd1">
+
+    <div class="diagram-wrapper">
+        <div class="diagram-toolbar">
+            <span class="label">DFD Level 1 — 5 Major Subsystems & 7 Data Stores</span>
+            <div class="toolbar-buttons">
+                <button class="tool-btn" onclick="zoom('dfd1', 1.2)" title="Zoom In">+</button>
+                <button class="tool-btn" onclick="zoom('dfd1', 0.8)" title="Zoom Out">−</button>
+                <button class="tool-btn" onclick="fitDiagram('dfd1')" title="Fit to Screen">⊡</button>
+                <button class="tool-btn" onclick="resetDiagram('dfd1')" title="Reset">⟲</button>
+            </div>
+        </div>
+        <div class="diagram-viewport" id="viewport-dfd1" onwheel="onWheel(event,'dfd1')">
+            <div class="diagram-canvas" id="canvas-dfd1">
+                <div class="mermaid">
+flowchart TB
+    Customer["Customer"]
+    StaffUser["Staff / Admin / Owner"]
+
+    P1(("P1\nAuthentication\n& Authorization"))
+    P2(("P2\nService & Staff\nManagement"))
+    P3(("P3\nStaff Availability\nEngine"))
+    P4(("P4\nAppointment\nBooking"))
+    P5(("P5\nReporting\n& Audit"))
+
+    D1[("D1\nUsers")]
+    D2[("D2\nStaff &\nAssignments")]
+    D3[("D3\nServices &\nOptions")]
+    D4[("D4\nCustomers")]
+    D5[("D5\nAppointments")]
+    D6[("D6\nBusiness\nSettings")]
+    D7[("D7\nAudit\nLogs")]
+
+    StaffUser -->|"Username + Password"| P1
+    Customer -->|"Login optional"| P1
+    P1 <-->|"Verify credentials"| D1
+    P1 -->|"Auth session + perms"| StaffUser
+    P1 -->|"Auth event"| P5
+
+    StaffUser -->|"Staff CRUD, schedule"| P2
+    StaffUser -->|"Service CRUD, options"| P2
+    P2 <-->|"Read/Write staff"| D2
+    P2 <-->|"Read/Write services"| D3
+    P2 -->|"Manage event"| P5
+
+    Customer -->|"Date + service + staff"| P3
+    P3 -->|"Read schedules, leaves"| D2
+    P3 -->|"Read appointments"| D5
+    P3 -->|"Read service duration"| D3
+    P3 -->|"Available time slots"| Customer
+    P3 -->|"Slot validation"| P4
+
+    Customer -->|"Booking details"| P4
+    StaffUser -->|"Status update / cancel"| P4
+    P4 <-->|"Find or create customer"| D4
+    P4 <-->|"Create / update appointment"| D5
+    P4 -->|"Read settings"| D6
+    P4 -->|"Booking event"| P5
+    P4 -->|"Confirmation"| Customer
+
+    StaffUser -->|"Report / export request"| P5
+    StaffUser -->|"Backup request"| P5
+    P5 -->|"Read appointments"| D5
+    P5 -->|"Read customers"| D4
+    P5 -->|"Read staff"| D2
+    P5 -->|"Read services"| D3
+    P5 -->|"Write audit log"| D7
+    P5 -->|"Reports / backup file"| StaffUser
+                </div>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span> External Entity</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Process (P1–P5)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--success)"></span> Data Store (D1–D7)</div>
+        </div>
+    </div>
+
+    <div class="explanation">
+        <h3>📋 About This Diagram</h3>
+        <p>The Level 1 DFD decomposes the BookEase system into <strong>5 major subsystems (processes)</strong> and shows how they interact with <strong>7 data stores</strong>.</p>
+        <table class="data-table">
+            <thead>
+                <tr><th>Process</th><th>Description</th><th>Source Module</th></tr>
+            </thead>
+            <tbody>
+                <tr><td><strong>P1</strong> — Auth & Authorization</td><td>Login, password verification, RBAC, session management</td><td><code>src/core/security.py</code></td></tr>
+                <tr><td><strong>P2</strong> — Service & Staff Mgmt</td><td>CRUD for services, options, staff, schedules, leaves</td><td><code>src/ui/views/</code>, <code>streamlit_app/pages/</code></td></tr>
+                <tr><td><strong>P3</strong> — Availability Engine</td><td>Compute available slots from schedules, leaves, bookings</td><td><code>src/core/availability.py</code></td></tr>
+                <tr><td><strong>P4</strong> — Appointment Booking</td><td>Create, reschedule, cancel; customer upsert</td><td><code>src/core/booking_service.py</code></td></tr>
+                <tr><td><strong>P5</strong> — Reporting & Audit</td><td>Reports, exports, audit logging, backups</td><td><code>reports_service.py</code>, <code>audit_logger.py</code></td></tr>
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════════════════ -->
+<!-- TAB 4: DFD Level 2                                               -->
+<!-- ════════════════════════════════════════════════════════════════ -->
+<section class="tab-content" id="tab-dfd2">
+
+    <div class="diagram-wrapper">
+        <div class="diagram-toolbar">
+            <span class="label">DFD Level 2 — Customer Appointment Booking Workflow (9 Sub-Processes)</span>
+            <div class="toolbar-buttons">
+                <button class="tool-btn" onclick="zoom('dfd2', 1.2)" title="Zoom In">+</button>
+                <button class="tool-btn" onclick="zoom('dfd2', 0.8)" title="Zoom Out">−</button>
+                <button class="tool-btn" onclick="fitDiagram('dfd2')" title="Fit to Screen">⊡</button>
+                <button class="tool-btn" onclick="resetDiagram('dfd2')" title="Reset">⟲</button>
+            </div>
+        </div>
+        <div class="diagram-viewport" id="viewport-dfd2" onwheel="onWheel(event,'dfd2')">
+            <div class="diagram-canvas" id="canvas-dfd2">
+                <div class="mermaid">
+flowchart TB
+    Customer["Customer\n(Website Visitor)"]
+
+    P41(("P4.1\nBrowse\nServices"))
+    P42(("P4.2\nSelect\nSpecialist"))
+    P43(("P4.3\nFetch Available\nDates"))
+    P44(("P4.4\nCompute\nTime Slots"))
+    P45(("P4.5\nValidate\nInput"))
+    P46(("P4.6\nCustomer\nUpsert"))
+    P47(("P4.7\nCreate\nAppointment"))
+    P48(("P4.8\nLog\nAudit"))
+    P49(("P4.9\nShow\nConfirmation"))
+
+    D3[("D3\nServices &\nOptions")]
+    D2[("D2\nStaff &\nSchedules")]
+    D5[("D5\nAppointments")]
+    D4[("D4\nCustomers")]
+    D6[("D6\nBusiness\nSettings")]
+    D7[("D7\nAudit\nLogs")]
+
+    Customer -->|"Visit services page"| P41
+    P41 -->|"Read services + options"| D3
+    P41 -->|"Service list with pricing"| Customer
+
+    Customer -->|"Selects a service"| P42
+    P42 -->|"Read staff for service"| D2
+    P42 -->|"Specialist list"| Customer
+
+    Customer -->|"Selects specialist"| P43
+    P43 -->|"Read schedules & leaves"| D2
+    P43 -->|"Read appointments"| D5
+    P43 -->|"Available dates"| Customer
+
+    Customer -->|"Selects a date"| P44
+    P44 -->|"Read schedule"| D2
+    P44 -->|"Read leave"| D2
+    P44 -->|"Read appointments"| D5
+    P44 -->|"Read duration"| D3
+    P44 -->|"Available time slots"| Customer
+
+    Customer -->|"Submits booking form"| P45
+    P45 -->|"Validation result"| Customer
+
+    P45 -->|"Validated data"| P46
+    P46 -->|"Find by phone"| D4
+    P46 -->|"Create if not found"| D4
+    P46 -->|"Customer ID"| P47
+
+    P47 -->|"Double-booking check"| D5
+    P47 -->|"Read auto-confirm setting"| D6
+    P47 -->|"Create appointment"| D5
+    P47 -->|"Appointment record"| P48
+
+    P48 -->|"Write audit entry"| D7
+
+    P47 -->|"Appointment details"| P49
+    P49 -->|"Confirmation page"| Customer
+                </div>
+            </div>
+        </div>
+        <div class="legend">
+            <div class="legend-item"><span class="legend-dot" style="background:var(--accent)"></span> External Entity</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--blue)"></span> Sub-Process (P4.1–P4.9)</div>
+            <div class="legend-item"><span class="legend-dot" style="background:var(--success)"></span> Data Store</div>
+        </div>
+    </div>
+
+    <div class="explanation">
+        <h3>📋 About This Diagram</h3>
+        <p>This Level 2 DFD decomposes <strong>Process P4 (Appointment Booking)</strong> into <strong>9 detailed sub-processes</strong>, representing the complete customer booking journey on the Streamlit website.</p>
+        <table class="data-table">
+            <thead>
+                <tr><th>Step</th><th>Sub-Process</th><th>What Happens</th><th>Source</th></tr>
+            </thead>
+            <tbody>
+                <tr><td>1</td><td><strong>P4.1</strong> Browse Services</td><td>Fetch active services with options and pricing</td><td><code>db.py:get_services_with_options()</code></td></tr>
+                <tr><td>2</td><td><strong>P4.2</strong> Select Specialist</td><td>Fetch staff assigned to the chosen service</td><td><code>db.py:get_staff_for_service()</code></td></tr>
+                <tr><td>3</td><td><strong>P4.3</strong> Fetch Available Dates</td><td>Scan next 30 days for dates with open slots</td><td><code>db.py:get_available_dates()</code></td></tr>
+                <tr><td>4</td><td><strong>P4.4</strong> Compute Time Slots</td><td>Check schedule, leave, breaks, existing bookings</td><td><code>availability.py</code></td></tr>
+                <tr><td>5</td><td><strong>P4.5</strong> Validate Input</td><td>Server-side: name ≥2, phone ≥7, email regex, date not past</td><td><code>book.py</code></td></tr>
+                <tr><td>6</td><td><strong>P4.6</strong> Customer Upsert</td><td>Find existing customer by phone, or create new</td><td><code>db.py:find_or_create_customer()</code></td></tr>
+                <tr><td>7</td><td><strong>P4.7</strong> Create Appointment</td><td>Double-booking check, generate BK-YYYYMMDD-NNN, persist</td><td><code>booking_service.py</code></td></tr>
+                <tr><td>8</td><td><strong>P4.8</strong> Log Audit</td><td>Record WEB_BOOKING action in audit log</td><td><code>audit_logger.py</code></td></tr>
+                <tr><td>9</td><td><strong>P4.9</strong> Show Confirmation</td><td>Display appointment number and booking details</td><td><code>confirmation.py</code></td></tr>
+            </tbody>
+        </table>
+        <p style="margin-top: 16px;"><strong>Validation rules enforced:</strong> name length ≥ 2, phone length ≥ 7, email format regex, date not in past, valid time format, slot availability (no double-booking), staff working that day, not on leave, not during break, and price resolved server-side (never trusted from client).</p>
+    </div>
+</section>
+
+</main>
+
+<footer>
+    BookEase v1.0.0 — Generated from actual source code (<code>src/database/models.py</code>, <code>src/core/</code>, <code>src/config.py</code>, <code>streamlit_app/</code>)<br>
+    Use mouse wheel to zoom · Drag to pan · Toolbar buttons for zoom/fit/reset
+</footer>
+
+<script>
+    // ── Mermaid Init ──────────────────────────────────────────────
+    mermaid.initialize({
+        startOnLoad: true,
+        theme: 'dark',
+        themeVariables: {
+            darkMode: true,
+            background: '#1A0A0E',
+            primaryColor: '#2A1118',
+            primaryTextColor: '#F5E6EA',
+            primaryBorderColor: '#C4627A',
+            lineColor: '#C4627A',
+            secondaryColor: '#1E1015',
+            tertiaryColor: '#3A1A24',
+            edgeLabelBackground: '#2A1118',
+            fontFamily: 'Segoe UI, sans-serif',
+            fontSize: '14px',
+        },
+        flowchart: { curve: 'basis', padding: 20 },
+        er: { useMaxWidth: false, fontSize: '13px' },
+    });
+
+    // ── Tab Navigation ───────────────────────────────────────────
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            const tabId = 'tab-' + btn.dataset.tab;
+            document.getElementById(tabId).classList.add('active');
+            // Re-fit the newly shown diagram
+            setTimeout(() => fitDiagram(btn.dataset.tab), 100);
+        });
+    });
+
+    // ── Zoom & Pan State ─────────────────────────────────────────
+    const state = {};
+
+    function initState(id) {
+        if (!state[id]) {
+            state[id] = { scale: 1, x: 0, y: 0, dragging: false, startX: 0, startY: 0 };
+        }
+    }
+
+    function applyTransform(id) {
+        initState(id);
+        const canvas = document.getElementById('canvas-' + id);
+        const s = state[id];
+        canvas.style.transform = `translate(calc(-50% + ${s.x}px), calc(-50% + ${s.y}px)) scale(${s.scale})`;
+        const indicator = document.querySelector('#viewport-' + id + ' .zoom-indicator');
+        if (indicator) indicator.textContent = Math.round(s.scale * 100) + '%';
+    }
+
+    function zoom(id, factor) {
+        initState(id);
+        state[id].scale = Math.max(0.2, Math.min(5, state[id].scale * factor));
+        applyTransform(id);
+    }
+
+    function fitDiagram(id) {
+        initState(id);
+        const viewport = document.getElementById('viewport-' + id);
+        const canvas = document.getElementById('canvas-' + id);
+        const svg = canvas.querySelector('svg');
+        if (!svg) { resetDiagram(id); return; }
+        const svgWidth = svg.getBBox().width + 80;
+        const svgHeight = svg.getBBox().height + 80;
+        const vpWidth = viewport.clientWidth;
+        const vpHeight = viewport.clientHeight;
+        const scale = Math.min(vpWidth / svgWidth, vpHeight / svgHeight, 1.5);
+        state[id].scale = Math.max(0.3, scale);
+        state[id].x = 0;
+        state[id].y = 0;
+        applyTransform(id);
+    }
+
+    function resetDiagram(id) {
+        initState(id);
+        state[id].scale = 1;
+        state[id].x = 0;
+        state[id].y = 0;
+        applyTransform(id);
+    }
+
+    function onWheel(event, id) {
+        event.preventDefault();
+        const factor = event.deltaY < 0 ? 1.1 : 0.9;
+        zoom(id, factor);
+    }
+
+    // ── Drag to Pan ──────────────────────────────────────────────
+    function setupPan(id) {
+        const viewport = document.getElementById('viewport-' + id);
+        if (!viewport) return;
+        viewport.addEventListener('mousedown', (e) => {
+            if (e.target.closest('.tool-btn')) return;
+            initState(id);
+            state[id].dragging = true;
+            state[id].startX = e.clientX - state[id].x;
+            state[id].startY = e.clientY - state[id].y;
+            viewport.classList.add('grabbing');
+        });
+        document.addEventListener('mousemove', (e) => {
+            initState(id);
+            if (!state[id].dragging) return;
+            state[id].x = e.clientX - state[id].startX;
+            state[id].y = e.clientY - state[id].startY;
+            applyTransform(id);
+        });
+        document.addEventListener('mouseup', () => {
+            initState(id);
+            state[id].dragging = false;
+            viewport.classList.remove('grabbing');
+        });
+    }
+
+    // ── Touch Support ────────────────────────────────────────────
+    function setupTouch(id) {
+        const viewport = document.getElementById('viewport-' + id);
+        if (!viewport) return;
+        let touchStart = null;
+        viewport.addEventListener('touchstart', (e) => {
+            if (e.touches.length === 1) {
+                initState(id);
+                touchStart = { x: e.touches[0].clientX - state[id].x, y: e.touches[0].clientY - state[id].y };
+            }
+        }, { passive: true });
+        viewport.addEventListener('touchmove', (e) => {
+            if (e.touches.length === 1 && touchStart) {
+                initState(id);
+                state[id].x = e.touches[0].clientX - touchStart.x;
+                state[id].y = e.touches[0].clientY - touchStart.y;
+                applyTransform(id);
+            }
+        }, { passive: true });
+        viewport.addEventListener('touchend', () => { touchStart = null; });
+    }
+
+    // ── Initialize ───────────────────────────────────────────────
+    const diagramIds = ['erd', 'dfd0', 'dfd1', 'dfd2'];
+    diagramIds.forEach(id => {
+        initState(id);
+        setupPan(id);
+        setupTouch(id);
+    });
+
+    // Auto-fit after mermaid renders
+    setTimeout(() => {
+        diagramIds.forEach(id => fitDiagram(id));
+    }, 1500);
+
+    // Add zoom indicators
+    diagramIds.forEach(id => {
+        const vp = document.getElementById('viewport-' + id);
+        if (vp) {
+            const ind = document.createElement('div');
+            ind.className = 'zoom-indicator';
+            ind.textContent = '100%';
+            vp.appendChild(ind);
+        }
+    });
+</script>
+
+</body>
+</html>

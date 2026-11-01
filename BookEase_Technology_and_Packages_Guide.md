@@ -100,7 +100,7 @@ These 20 packages are explicitly listed in `requirements.txt`:
 | 14 | **pytest** | 9.1.1 | Testing framework | `tests/` (87 tests) |
 | 15 | **pytest-cov** | 7.1.0 | Test coverage measurement | Used with pytest |
 | 16 | **pyinstaller** | 6.22.3 | Freeze Python app into a standalone .exe | `build_installer.py`, `BookEase.spec` |
-| 17 | **streamlit** | *not installed* | Web app framework for the customer booking site | `streamlit_app.py`, `streamlit_app/` package |
+| 17 | **streamlit** | *Installed* | Web app framework for the customer booking site | `streamlit_app.py`, `streamlit_app/` package |
 | 18 | **flask** | 3.1.3 | Web framework for internal staff portal and API | `web/app.py`, `web/routes/`, `web_server.py` |
 | 19 | **flask-session** | 0.8.0 | Server-side session storage for Flask | `web/app.py` |
 | 20 | **gunicorn** | 26.2.0 | Production WSGI HTTP server | `Procfile` (deployment) |
