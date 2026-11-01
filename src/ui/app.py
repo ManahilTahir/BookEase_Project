@@ -55,6 +55,11 @@ class BookEaseApp(ctk.CTk):
         self.main_container = ctk.CTkFrame(self, fg_color=PALETTE["dark"]["bg_primary"])
         self.main_container.pack(fill="both", expand=True)
 
+        # Auto-refresh timer: refresh the active view every 30 seconds so
+        # web bookings (from the Streamlit app) appear without manual navigation.
+        self._auto_refresh_interval = 30000  # milliseconds
+        self._auto_refresh_id = None
+
         # Check authentication
         if not SessionManager.is_authenticated():
             self.show_login()
@@ -321,6 +326,7 @@ class BookEaseApp(ctk.CTk):
 
     def handle_logout(self):
         """Clear session and return to login view."""
+        self._cancel_auto_refresh()
         SessionManager.clear_session()
         self.show_login()
 
@@ -370,6 +376,37 @@ class BookEaseApp(ctk.CTk):
             view = DashboardView(self.content_canvas, on_navigate=self.navigate)
 
         view.pack(fill="both", expand=True)
+
+        # Start auto-refresh for data-bearing views
+        self._start_auto_refresh()
+
+    def _start_auto_refresh(self):
+        """Schedule periodic refresh of the active view so web bookings appear."""
+        self._cancel_auto_refresh()
+        refresh_keys = {"dashboard", "appointments", "calendar"}
+        if self.active_nav_key in refresh_keys:
+            self._auto_refresh_id = self.after(
+                self._auto_refresh_interval,
+                self._auto_refresh_tick,
+            )
+
+    def _cancel_auto_refresh(self):
+        """Cancel any pending auto-refresh timer."""
+        if self._auto_refresh_id is not None:
+            try:
+                self.after_cancel(self._auto_refresh_id)
+            except Exception:
+                pass
+            self._auto_refresh_id = None
+
+    def _auto_refresh_tick(self):
+        """Refresh the active view silently to pick up new web bookings."""
+        # Skip if a modal dialog is open (don't disrupt user interaction)
+        for child in self.winfo_children():
+            if isinstance(child, ctk.CTkToplevel):
+                return
+        # Re-navigate to the same view to recreate it with fresh data
+        self.navigate(self.active_nav_key)
 
 
 def launch():

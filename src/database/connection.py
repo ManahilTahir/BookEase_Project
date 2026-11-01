@@ -4,15 +4,24 @@ import os
 from contextlib import contextmanager
 from sqlalchemy import create_engine, event
 from sqlalchemy.orm import sessionmaker, scoped_session
+from sqlalchemy.pool import NullPool
 from src.config import DATABASE_URL, DB_PATH
 from src.database.models import Base
 
-# Create SQLite Engine with foreign keys enabled and WAL journal mode
+# Create SQLite Engine with foreign keys enabled and WAL journal mode.
+# NullPool is used instead of the default SingletonThreadPool so that every
+# get_db() call gets a brand-new DBAPI connection.  This is essential when
+# the desktop app and the Streamlit web app run as separate processes sharing
+# the same SQLite file: a pooled connection may hold a read transaction that
+# snapshots the database *before* the other process committed a new booking,
+# making the booking invisible.  NullPool guarantees each session sees all
+# previously committed data.
 engine = create_engine(
     DATABASE_URL,
     connect_args={"check_same_thread": False},
     echo=False,
     future=True,
+    poolclass=NullPool,
 )
 
 

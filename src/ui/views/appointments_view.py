@@ -102,6 +102,18 @@ class AppointmentsView(ctk.CTkFrame):
         actions_box = ctk.CTkFrame(header, fg_color="transparent")
         actions_box.pack(side="right")
 
+        # Refresh
+        ctk.CTkButton(
+            actions_box,
+            text="🔄 Refresh",
+            width=100,
+            height=36,
+            font=FONT_SMALL_BOLD,
+            fg_color=PALETTE["dark"]["card_secondary"],
+            hover_color=PALETTE["dark"]["border"],
+            command=self.refresh_table,
+        ).pack(side="left", padx=(0, 8))
+
         # Export Excel
         ctk.CTkButton(
             actions_box,
